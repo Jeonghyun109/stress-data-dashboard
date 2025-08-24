@@ -11,12 +11,8 @@ import { CONTENT as TIME_CONTENT } from "@/data/stressTime";
 /*
   TODOs
   1. 아이콘 추가
-  2. Toggle 열었다 닫았다 할 수 있도록 수정
 */
 const StressType: React.FC = () => {
-  const [openPsy, setOpenPsy] = useState<boolean>(false);
-  const [openPhy, setOpenPhy] = useState<boolean>(false);
-
   return (
     <div className="mb-8">
       <div className="font-semibold text-3xl">{CONTENT.TITLE}</div>
@@ -27,7 +23,7 @@ const StressType: React.FC = () => {
           란?
           </button>
           <div className="mt-4">
-            {openPsy && CONTENT.BODY_1.DESCRIPTION.map((item, index) => (
+            {CONTENT.BODY_1.DESCRIPTION.map((item, index) => (
               <span key={index} style={{ fontWeight: item.BOLD ? 'bold' : 'normal' }}>
                 {item.TXT}
               </span>
@@ -40,7 +36,7 @@ const StressType: React.FC = () => {
             란?
           </button>
           <div className="mt-4">
-            {openPhy &&CONTENT.BODY_2.DESCRIPTION.map((item, index) => (
+            {CONTENT.BODY_2.DESCRIPTION.map((item, index) => (
               <span key={index} style={{ fontWeight: item.BOLD ? 'bold' : 'normal' }}>
                 {item.TXT}
               </span>

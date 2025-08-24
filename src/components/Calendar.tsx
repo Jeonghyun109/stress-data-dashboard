@@ -197,13 +197,13 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
   let summary = { 'avg': 1, 'min': 0, 'max': 2 };
 
   return (
-    <div className="w-[658px] mx-auto font-sans p-6">
-    {/* <div className="w-[338px] mx-auto font-sans p-6"> */}
+    // <div className="w-[658px] mx-auto font-sans p-6">
+    <div className="w-[338px] mx-auto font-sans p-6">
       <Header showPsych={showPsych} setShowPsych={setShowPsych} showPhys={showPhys} setShowPhys={setShowPhys} />
       <MonthNavigation />
       <WeekLabels />
-      {/* <div className="grid grid-cols-7 gap-0.25 rounded-xl p-[1px] mt-1 bg-gray-200 text-sm"> */}
-      <div className="grid [grid-template-columns:repeat(7,minmax(0,1fr))_1.6fr] gap-0.25 rounded-xl p-[1px] mt-1 bg-gray-200 text-sm">
+      <div className="grid grid-cols-7 gap-0.25 rounded-xl p-[1px] mt-1 bg-gray-200 text-sm">
+      {/* <div className="grid [grid-template-columns:repeat(7,minmax(0,1fr))_1.6fr] gap-0.25 rounded-xl p-[1px] mt-1 bg-gray-200 text-sm"> */}
         {splitWeeks(dates).map((week, w_idx) => (
           <React.Fragment key={`week-${w_idx}`}>
           {week.map((date, idx) => {
@@ -228,13 +228,13 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
               </button>
             );
           })}
-          <div className={`h-[44px] w-[360px] ${w_idx === 0 ? 'rounded-tr-xl' : w_idx === splitWeeks(dates).length - 1 ? 'rounded-br-xl' : ''} bg-white px-2 py-1`}>
+          {/* <div className={`h-[44px] w-[360px] ${w_idx === 0 ? 'rounded-tr-xl' : w_idx === splitWeeks(dates).length - 1 ? 'rounded-br-xl' : ''} bg-white px-2 py-1`}>
             {summary.avg === null ? (
             <span className="text-gray-500">데이터 없음</span>
             ) : (
             <div className="text-gray-700">이번주는 평균 {summary.avg} / 최저 {summary.min} / 최고 {summary.max}의 스트레스를 받으셨네요! 평소보다 스트레스를 많이 받으셨던 것으로 보입니다.</div>
             )}
-          </div>
+          </div> */}
           </React.Fragment>
         ))}
       </div>
