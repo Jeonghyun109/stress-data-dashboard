@@ -18,7 +18,7 @@ const StressType: React.FC = () => {
       <div className="font-semibold text-3xl">{CONTENT.TITLE}</div>
       <div className="my-4 flex flex-row gap-24">
         <div className="w-1/2">
-          <button className="font-semibold text-2xl cursor-pointer" onClick={() => setOpenPsy(!openPsy)}>
+          <button className="font-semibold text-2xl">
             <span className="text-violet-500">{CONTENT.BODY_1.TITLE}</span>
           란?
           </button>
@@ -31,7 +31,7 @@ const StressType: React.FC = () => {
           </div>
         </div>
         <div className="w-1/2">
-          <button className="font-semibold text-2xl cursor-pointer" onClick={() => setOpenPhy(!openPhy)}>
+          <button className="font-semibold text-2xl">
             <span className="text-orange-500">{CONTENT.BODY_2.TITLE}</span>
             란?
           </button>
