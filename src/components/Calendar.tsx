@@ -43,17 +43,16 @@ const Header: React.FC<{
   <div className="mb-6 flex flex-col items-center justify-between">
     <h2 className="text-2xl font-bold text-gray-800">일간 스트레스 변화 캘린더</h2>
     <div className="w-full flex flex-col items-end gap-2">
-      <ToggleSwitch active={showPsych} onToggle={() => setShowPsych(!showPsych)} color="#2563EB" label="인지 스트레스 점수" />
-      <ToggleSwitch active={showPhys} onToggle={() => setShowPhys(!showPhys)} color="#DC2626" label="신체 스트레스 점수" />
+      <ToggleSwitch active={showPsych} onToggle={() => setShowPsych(!showPsych)} color="#A78BFA" label="인지 스트레스 점수" />
+      <ToggleSwitch active={showPhys} onToggle={() => setShowPhys(!showPhys)} color="#F59E0B" label="신체 스트레스 점수" />
     </div>
   </div>
 );
 
 /*
   TODOs
-  1. LLM 주간 요약
-  2. 설명문
-  3. 드래그 해서 여러 날짜 선택
+  1. 설명문
+  2. 드래그 해서 여러 날짜 선택
 */
 const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate }) => {
   const today = new Date();
@@ -116,8 +115,8 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
     return STRESS_CLASSES[type][lvl] ?? '';
   };
   const levelToHex = (type: Stress, lvl: number) => {
-    if (lvl < 0) return '#ffffff';
-    return STRESS_HEX[type][lvl] ?? '#ffffff';
+    if (lvl < 0) return '#e5e7eb';
+    return STRESS_HEX[type][lvl] ?? '#e5e7eb';
   };
 
   const getDateStyle = (date: Date) => {
