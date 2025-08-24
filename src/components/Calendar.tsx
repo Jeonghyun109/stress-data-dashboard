@@ -120,13 +120,11 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
   };
 
   const getDateStyle = (date: Date) => {
-    if (date.getMonth() !== month) return { className: 'text-gray-400', style: { backgroundColor: '#F3F4F6' } };
-    const fixedDate = new Date(date)
-    fixedDate.setDate(fixedDate.getDate() + 1)
-
-    // const key = date.toISOString().slice(0, 10);
-    const key = fixedDate.toISOString().slice(0, 10);
-    const data = getForDate(key) ?? { psych: -1, phys: -1 };
+  if (date.getMonth() !== month) return { className: 'text-gray-400', style: { backgroundColor: '#F3F4F6' } };
+  // Use local date string for key to match useStressData
+  const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  console.log(date, key)
+  const data = getForDate(key) ?? { psych: -1, phys: -1 };
     const psych = data.psych;
     const phys = data.phys;
 
@@ -200,7 +198,7 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
 
   return (
     // <div className="w-[658px] mx-auto font-sans p-6">
-    <div className="w-[338px] mx-auto font-sans p-6">
+    <div className="w-[338px] mx-auto font-sans py-6 pl-0 pr-6">
       <Header showPsych={showPsych} setShowPsych={setShowPsych} showPhys={showPhys} setShowPhys={setShowPhys} />
       <MonthNavigation />
       <WeekLabels />
@@ -209,7 +207,7 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
         {splitWeeks(dates).map((week, w_idx) => (
           <React.Fragment key={`week-${w_idx}`}>
             {week.map((date, idx) => {
-              const base = 'w-[40px] h-[40px] first:rounded-tl-xl nth-7:rounded-tr-xl nth-36:rounded-bl-xl last:rounded-br-xl text-center leading-[40px] mx-auto hover:font-bold';
+              const base = 'w-[44px] h-[40px] first:rounded-tl-xl nth-7:rounded-tr-xl nth-36:rounded-bl-xl last:rounded-br-xl text-center leading-[40px] mx-auto hover:font-bold';
               const ds = getDateStyle(date);
               return (
                 <button

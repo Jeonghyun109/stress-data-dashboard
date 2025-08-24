@@ -10,10 +10,13 @@ import DeltaPage from "@/components/DeltaPage";
 const StressType: React.FC = () => {
   return (
     <div className="mb-8">
-      <div className="font-semibold text-3xl">{CONTENT.TITLE}</div>
+      <div className="font-semibold text-3xl">
+        {CONTENT.TITLE}
+      </div>
       <div className="my-4 flex flex-row gap-24">
         <div className="w-1/2 pr-8">
-          <button className="font-semibold text-2xl">
+          <button className="font-semibold text-2xl flex items-center gap-2">
+            <img src="/icons/PsychologicalStressIcon.svg" alt="인지 스트레스 아이콘" className="w-7 h-7 inline-block align-middle" />
             <span className="text-violet-500">{CONTENT.BODY_1.TITLE}</span>
             란?
           </button>
@@ -26,7 +29,8 @@ const StressType: React.FC = () => {
           </div>
         </div>
         <div className="w-1/2 pr-8">
-          <button className="font-semibold text-2xl">
+          <button className="font-semibold text-2xl flex items-center gap-2">
+            <img src="/icons/PhysiologicalStressIcon.svg" alt="신체 스트레스 아이콘" className="w-7 h-7 inline-block align-middle" />
             <span className="text-orange-500">{CONTENT.BODY_2.TITLE}</span>
             란?
           </button>
