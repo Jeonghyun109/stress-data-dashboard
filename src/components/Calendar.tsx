@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import useStressData from '@/hooks/useStressData';
+import Image from 'next/image';
 
 interface CalendarProps {
   pid: string | undefined;
@@ -120,9 +121,13 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
   };
 
   const getDateStyle = (date: Date) => {
-    if (date.getMonth() !== month) return { className: 'text-gray-400', style: { backgroundColor: '#F3F4F6' } };
+    const fixedDate = new Date(date)
+    fixedDate.setDate(fixedDate.getDate() + 1)
+    if (fixedDate.getMonth() !== month) return { className: 'text-gray-400', style: { backgroundColor: '#F3F4F6' } };
 
-    const key = date.toISOString().slice(0, 10);
+    // const key = date.toISOString().slice(0, 10);
+    const key = fixedDate.toISOString().slice(0, 10);
+    console.log(key)
     const data = getForDate(key) ?? { psych: -1, phys: -1 };
     const psych = data.psych;
     const phys = data.phys;
@@ -165,7 +170,7 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
           disabled={isPrevDisabled}
           onClick={() => setMonth(month - 1)}
         >
-          <img src="/icons/chevron-left.svg" alt="Previous Month" width={24} height={24} />
+          <Image src="/icons/chevron-left.svg" alt="Previous Month" width={24} height={24} />
         </button>
         <span className="font-semibold text-[20px]">{year}.{month + 1}</span>
         <button
@@ -174,7 +179,7 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
           disabled={isNextDisabled}
           onClick={() => setMonth(month + 1)}
         >
-          <img src="/icons/chevron-right.svg" alt="Next Month" width={24} height={24} />
+          <Image src="/icons/chevron-right.svg" alt="Next Month" width={24} height={24} />
         </button>
       </div>
     );
@@ -206,8 +211,7 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
         {splitWeeks(dates).map((week, w_idx) => (
           <React.Fragment key={`week-${w_idx}`}>
             {week.map((date, idx) => {
-              let base =
-                'w-[40px] h-[40px] first:rounded-tl-xl nth-7:rounded-tr-xl nth-36:rounded-bl-xl last:rounded-br-xl text-center leading-[40px] mx-auto hover:font-bold';
+              const base = 'w-[40px] h-[40px] first:rounded-tl-xl nth-7:rounded-tr-xl nth-36:rounded-bl-xl last:rounded-br-xl text-center leading-[40px] mx-auto hover:font-bold';
               const ds = getDateStyle(date);
               return (
                 <button

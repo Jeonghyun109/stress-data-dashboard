@@ -74,18 +74,18 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
         // PID로 먼저 필터링 (있을 때만)
         const filteredRows = pid
           ? rows.filter(r => {
-              const rowPid = String(r.pid ?? r.participant_id ?? r.user_id ?? '');
-              return rowPid === pid;
-            })
+            const rowPid = String(r.pid ?? r.participant_id ?? r.user_id ?? '');
+            return rowPid === pid;
+          })
           : rows;
         // console.log(filteredRows);
-        
+
         const byDay = new Map<string, {
-           psychVals: number[];
-           rmssdVals: number[];
-         }>();
-         const rawByDate = new Map<string, Array<Record<string, any>>>(); // now will contain feature objects per row
- 
+          psychVals: number[];
+          rmssdVals: number[];
+        }>();
+        const rawByDate = new Map<string, Array<Record<string, any>>>(); // now will contain feature objects per row
+
         for (const r of filteredRows) {
           const rowPid = String(r.pid ?? r.participant_id ?? r.user_id ?? '');
           const tRaw = new Date(r.surveyTime);
@@ -246,16 +246,16 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           });
         }
 
-        
+
 
         if (mounted) {
           setDailyMap(out);
           setRowsByDate(rawByDate); // now returns feature rows per date
           setLoading(false);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (mounted) {
-          setError(err?.message ?? String(err));
+          setError(err instanceof Error ? err.message : String(err));
           setLoading(false);
         }
       }
@@ -264,6 +264,8 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
     load();
     return () => { mounted = false; };
   }, [csvUrl, pid]);
+
+  console.log(dailyMap)
 
   const getForDate = (isoDate: string) => dailyMap.get(isoDate);
   const getRowsForDate = (isoDate: string) => rowsByDate.get(isoDate) ?? [];

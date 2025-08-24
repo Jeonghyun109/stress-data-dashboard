@@ -31,7 +31,7 @@ const StressType: React.FC = () => {
             란?
           </button>
           <div className="mt-4">
-            {openPhy && CONTENT.BODY_2.DESCRIPTION.map((item, index) => (
+            {CONTENT.BODY_2.DESCRIPTION.map((item, index) => (
               <span key={index} style={{ fontWeight: item.BOLD ? 'bold' : 'normal' }}>
                 {item.TXT}
               </span>
