@@ -115,8 +115,8 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
     return STRESS_CLASSES[type][lvl] ?? 'bg-white';
   };
   const levelToHex = (type: Stress, lvl: number) => {
-    if (lvl < 0) return '#e5e7eb';
-    return STRESS_HEX[type][lvl] ?? '#e5e7eb';
+    if (lvl < 0) return '#ffffff';
+    return STRESS_HEX[type][lvl] ?? '#ffffff';
   };
 
   const getDateStyle = (date: Date) => {
