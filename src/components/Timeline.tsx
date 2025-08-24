@@ -3,7 +3,7 @@ import useStressData from '@/hooks/useStressData';
 
 // Props reuse shared StressDataPoint type from data module
 interface TimelineProps {
-  pid?: string;
+  pid: string;
   selectedDate: Date;
 }
 
@@ -68,7 +68,7 @@ const getRange = (vals: number[]) => {
 const pad2 = (n: number) => String(n).padStart(2, '0');
 const formatTime = (ms: number) => {
   if (Number.isNaN(ms)) return '';
-  const d = new Date(ms);
+  const d = new Date(ms - 9 * 60 * 60 * 1000);
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 };
   
@@ -147,12 +147,12 @@ const TimelineChart: React.FC<{
   return (
     <div className="relative w-full" onClick={(e) => { e.stopPropagation(); tooltip && closeTooltip(); }}>
       {/* Row labels */}
-      <div className="absolute left-0 top-0 bottom-8 flex flex-col justify-between w-28 pr-4 my-4">
+      <div className="absolute left-0 top-0 bottom-8 flex flex-col justify-between w-28 pr-4 my-12">
         <div className="text-sm font-medium text-gray-700 text-center leading-tight">
-          내가 체감한 <br />인지 스트레스
+          내가 체감한 <div className="font-bold text-purple-600">인지 스트레스</div>
         </div>
         <div className="text-sm font-medium text-gray-700 text-center leading-tight">
-          내 몸이 느낀 <br />신체 스트레스
+          내 몸이 느낀 <div className="font-bold text-yellow-600">신체 스트레스</div>
         </div>
       </div>
 
@@ -169,7 +169,7 @@ const TimelineChart: React.FC<{
                   return (
                     <div
                       key={`int-${i}`}
-                      className={`${cls} h-16 ${level ? 'cursor-pointer' : ''}`}
+                      className={`${cls} h-32 ${level ? 'cursor-pointer' : ''}`}
                       onClick={() => level && openTooltip(i)}
                     />
                   );
@@ -185,7 +185,7 @@ const TimelineChart: React.FC<{
                   return (
                     <div
                       key={`phy-${i}`}
-                      className={`${cls} h-16 ${level ? 'cursor-pointer' : ''}`}
+                      className={`${cls} h-32 ${level ? 'cursor-pointer' : ''}`}
                       onClick={() => level && openTooltip(i)}
                     />
                   );
@@ -261,7 +261,7 @@ const Timeline: React.FC<TimelineProps> = ({
   // load csv (filtered by pid)
   const { loading, getForDate, getRowsForDate } = useStressData('/data/feature_full.csv', pid);
   const rows = getRowsForDate(selectedDate.toISOString().slice(0, 10));
-
+  console.log(rows)
   // prepare buckets
   const buckets = React.useMemo(() => {
     const out: Array<{
@@ -288,30 +288,54 @@ const Timeline: React.FC<TimelineProps> = ({
     }
 
     // compute actual start/end from data
-    const epochs = rows.map(r => Number(r.__epochMs ?? r.windowStartTime ?? r.callEndTime ?? r.surveyTime)).filter(e => !Number.isNaN(e));
-    const minE = Math.min(...epochs);
-    const maxE = Math.max(...epochs);
-    // if timestamps seem in seconds (small), convert
-    const startMs = minE < 1e12 ? minE * 1000 : minE;
-    const endMs = maxE < 1e12 ? maxE * 1000 : maxE;
+    // helper: normalize epoch (seconds or ms) -> ms
+    const toEpochMsLocal = (v: unknown): number => {
+      const n = Number(v);
+      if (Number.isNaN(n)) return NaN;
+      return n < 1e12 ? Math.floor(n * 1000) : Math.floor(n);
+    };
+
+    // collect candidate epochs from common fields (preserve local ms)
+    const epochs = rows
+      .map(r => Date.parse(r.isoTime));
+
+    // fallback to working-day heuristic when no timestamps present
+    let startMs: number;
+    let endMs: number;
+    if (epochs.length === 0) {
+      startMs = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 8, 0, 0).getTime();
+      endMs = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 18, 0, 0).getTime();
+    } else {
+      const minE = Math.min(...epochs);
+      const maxE = Math.max(...epochs);
+      startMs = minE;
+      endMs = maxE;
+    }
     const span = Math.max(1, endMs - startMs);
 
-    // create empty buckets
+    // create empty buckets (evenly split timeline [startMs, endMs])
     for (let i = 0; i < SLOTS_COUNT; i++) {
       const s = Math.floor(startMs + (i * span) / SLOTS_COUNT);
       const e = Math.floor(startMs + ((i + 1) * span) / SLOTS_COUNT);
       out.push({ idx: i, startMs: s, endMs: e, rows: [], summary: {} });
     }
 
-    // place rows into buckets
+    // place rows into buckets (defensive clamping)
     for (const r of rows) {
-      const eRaw = Number(r.__epochMs ?? r.windowStartTime ?? r.callEndTime ?? r.surveyTime);
-      const epoch = (eRaw < 1e12 ? eRaw * 1000 : eRaw);
-      let idx = Math.floor(((epoch - startMs) / span) * SLOTS_COUNT);
-      if (idx < 0) idx = 0;
-      if (idx >= SLOTS_COUNT) idx = SLOTS_COUNT - 1;
-      out[idx].rows.push(r);
+      const epoch = Date.parse(r.isoTime);
+      if (Number.isNaN(epoch)) continue;
+
+      const rawIdx = Math.floor(((epoch - startMs) / span) * SLOTS_COUNT);
+      const idx = Math.min(Math.max(rawIdx, 0), out.length - 1);
+      // defensive ensure
+      if (!out[idx]) {
+        out[Math.max(0, Math.min(out.length - 1, idx))].rows.push(r);
+      } else {
+        out[idx].rows.push(r);
+      }
     }
+
+    console.log(out);
 
     // compute ranges for physical normalization using only this date's rows
     const hrVals = rows.map(r => Number(r.hr_mean)).filter(v => !Number.isNaN(v));
@@ -324,7 +348,8 @@ const Timeline: React.FC<TimelineProps> = ({
     // aggregate per bucket
     for (const b of out) {
       const internalVals: number[] = [];
-      const physRawVals: number[] = [];
+      // rmssd 기반으로만 신체 스트레스 계산
+      const rmssdBucketVals: number[] = [];
 
       // summary accumulators
       const summaryAcc: Record<string, any> = {
@@ -347,21 +372,12 @@ const Timeline: React.FC<TimelineProps> = ({
 
       for (const r of b.rows) {
         // internal stress
-        const s = Number(r.stress ?? r.psych ?? NaN);
+        const s = Number(r.stress ?? NaN);
         if (!Number.isNaN(s)) internalVals.push(Math.max(0, Math.min(4, s)));
 
-        // physical raw: combine hr (normalized), inverted rmssd (normalized), acc (normalized)
-        const hr = Number(r.hr_mean ?? NaN);
+        // 신체 스트레스는 rmssd(IBI 기반)만 사용: 버킷별 rmssd 평균을 취함
         const rmssd = Number(r.rmssd ?? NaN);
-        const acc = Number(r.acc_mean ?? NaN);
-        const comps: number[] = [];
-        const nh = !Number.isNaN(hr) ? normalize(hr, hrRange.min, hrRange.max) : NaN;
-        if (!Number.isNaN(nh)) comps.push(nh);
-        const nrm = !Number.isNaN(rmssd) ? normalize(rmssd, rmssdRange.min, rmssdRange.max) : NaN;
-        if (!Number.isNaN(nrm)) comps.push(1 - nrm);
-        const na = !Number.isNaN(acc) ? normalize(acc, accRange.min, accRange.max) : NaN;
-        if (!Number.isNaN(na)) comps.push(na);
-        if (comps.length) physRawVals.push(mean(comps));
+        if (!Number.isNaN(rmssd)) rmssdBucketVals.push(rmssd);
 
         // accumulate summaries (exclude psych/phys)
         const pushIfNum = (k: string, v: any) => { const n = Number(v); if (!Number.isNaN(n)) (summaryAcc[k] as number[]).push(n); };
@@ -388,8 +404,10 @@ const Timeline: React.FC<TimelineProps> = ({
       }
 
       const avgInternal = internalVals.length ? mean(internalVals) : NaN;
-      const avgPhysRaw = physRawVals.length ? mean(physRawVals) : NaN;
-      const avgPhysical = isValid(avgPhysRaw) ? rawToLevel(avgPhysRaw) : NaN;
+      // rmssd 평균을 정규화(normalize)하고 역수(1 - norm)를 사용해 스트레스 수준으로 변환
+      const avgRmssd = rmssdBucketVals.length ? mean(rmssdBucketVals) : NaN;
+      const avgPhysRaw = isValid(avgRmssd) ? normalize(avgRmssd, rmssdRange.min, rmssdRange.max) : NaN;
+      const avgPhysical = isValid(avgPhysRaw) ? rawToLevel(1 - avgPhysRaw) : NaN;
 
       // summarize numeric lists to means
       const summary: Record<string, any> = {};
@@ -412,7 +430,7 @@ const Timeline: React.FC<TimelineProps> = ({
   const physicalSeries = [];
 
   return (
-    <div className="w-full p-6 ">
+    <div className="w-full p-6 mb-12">
       <Header date={selectedDate ?? new Date()} />
       <Legend />
       <TimelineChart pid={pid} buckets={buckets} />
