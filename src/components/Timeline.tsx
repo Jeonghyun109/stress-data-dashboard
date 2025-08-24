@@ -121,7 +121,9 @@ const TimelineChart: React.FC<{
     avgPhysical?: number;
     summary: Record<string, any>;
   }>;
-}> = ({ pid, buckets }) => {
+  callLog: Array<string>;
+  interventions: Array<{ name: string; time: string; }>;
+}> = ({ pid, buckets, callLog, interventions }) => {
   const colPct = 100 / buckets.length;
   const [tooltip, setTooltip] = React.useState<null | { leftPercent: number; bucketIdx: number }>(null);
 
@@ -145,13 +147,14 @@ const TimelineChart: React.FC<{
   const colTemplate = `repeat(${buckets.length}, minmax(0, 1fr))`;
   
   return (
-    <div className="relative w-full" onClick={(e) => { e.stopPropagation(); tooltip && closeTooltip(); }}>
+    <div className="relative w-full" onClick={(e) => { e.stopPropagation(); }}>
       {/* Row labels */}
       <div className="absolute left-0 top-0 bottom-8 flex flex-col justify-between w-28 pr-4 my-12">
-        <div className="text-sm font-medium text-gray-700 text-center leading-tight">
+        <div className="font-medium text-gray-700 text-center leading-tight">
           내가 체감한 <div className="font-bold text-purple-600">인지 스트레스</div>
         </div>
-        <div className="text-sm font-medium text-gray-700 text-center leading-tight">
+        <div className="text-center text-sm">콜 응대 기록</div>
+        <div className="font-medium text-gray-700 text-center leading-tight">
           내 몸이 느낀 <div className="font-bold text-yellow-600">신체 스트레스</div>
         </div>
       </div>
@@ -161,7 +164,8 @@ const TimelineChart: React.FC<{
           {/* Bars rendered as two rows (internal / physical) */}
           {/* 그리드 너비를 부모의 GRID_WIDTH_PCT%로 제한해 바가 부모를 넘지 않도록 함 */}
           <div className="relative w-full">
-            <div style={{ width: `${GRID_WIDTH_PCT}%`, margin: '0 auto', overflow: 'hidden', boxSizing: 'border-box', position: 'relative' }}>
+            {/* allow overlays (intervention lines / call dots / tooltip) to extend outside grid */}
+            <div style={{ width: `${GRID_WIDTH_PCT}%`, margin: '0 auto', overflow: 'visible', boxSizing: 'border-box', position: 'relative' }}>
               <div className="grid gap-2" style={{ gridTemplateColumns: colTemplate }}>
                 {buckets.map((b, i) => {
                   const level = b.avgInternal && Number.isFinite(b.avgInternal) ? Math.max(0, Math.min(4, Math.round(b.avgInternal))) : undefined;
@@ -176,9 +180,98 @@ const TimelineChart: React.FC<{
                 })}
               </div>
 
-              {/* 콜 응대 기록: callSegments를 타임라인 범위에 맞춰 절대 위치로 렌더 */}
- 
-              <div className="grid gap-2 mt-4" style={{ gridTemplateColumns: colTemplate }}>
+              {/* 콜 응대 표시: 버킷 정렬에 무관하게 시간 위치에 작은 점으로 렌더 */}
+              <div className="absolute w-[734px] h-[2px] bg-gray-700" style={{ top: '46%' }}></div>
+              <div className="absolute inset-0 pointer-events-none">
+                {(() => {
+                  if (!buckets || buckets.length === 0 || (!callLog || !callLog.length) && (!interventions || !interventions.length)) return null;
+                  const timelineStart = buckets[0].startMs;
+                  const timelineEnd = buckets[buckets.length - 1].endMs;
+                  const span = Math.max(1, timelineEnd - timelineStart);
+
+                  const DOT_HALF_PX = 6;
+
+                  const parseTime = (v: unknown): number => {
+                    if (typeof v === 'number') return v < 1e12 ? v * 1000 : v;
+                    if (typeof v === 'string') {
+                      const n = Number(v);
+                      if (!Number.isNaN(n)) return n < 1e12 ? n * 1000 : n;
+                      const p = Date.parse(v);
+                      return Number.isNaN(p) ? NaN : p;
+                    }
+                    return NaN;
+                  };
+
+                  return (
+                    <>
+                     {/* interventions: 시간 위치에 수직 점선 표시 */}
+                     {interventions && interventions.length > 0 && interventions.map((iv, j) => {
+                       const tI = parseTime(iv.time);
+                       if (Number.isNaN(tI)) return null;
+                       const leftPctI = Math.min(100, Math.max(0, ((tI - timelineStart) / span) * 100));
+                       return (
+                         <React.Fragment key={`iv-${j}`}>
+                           {/* vertical dashed line */}
+                           <div
+                             title={`${iv.name ?? 'intervention'} ${formatTime(tI)}`}
+                             style={{
+                               position: 'absolute',
+                               left: `calc(${leftPctI}% )`,
+                               top: '-5%',
+                               bottom: '-10%',
+                               borderLeft: '2px dashed #7ccf00',
+                               borderRight: '2px dashed #7ccf00',
+                               transform: 'translateX(-1px)', // roughly center the 2px line
+                               pointerEvents: 'auto',
+                               overflow: 'visible',
+                               zIndex: 15,
+                             }}
+                           />
+                           {/* label under the line */}
+                           <div
+                             style={{
+                               position: 'absolute',
+                               left: `calc(${leftPctI}% )`,
+                               top: '120%', // 위치는 필요시 조정
+                               transform: 'translateX(-50%)',
+                               pointerEvents: 'auto',
+                               zIndex: 16,
+                               whiteSpace: 'nowrap',
+                             }}
+                           />
+                         </React.Fragment>
+                       );
+                     })}
+                     
+                      {/* call dots */}
+                      {callLog && callLog.length > 0 && callLog.map((callTime, i) => {
+                        const t = parseTime(callTime);
+                        if (Number.isNaN(t)) return null;
+                        const leftPct = Math.min(100, Math.max(0, ((t - timelineStart) / span) * 100));
+                        return (
+                          <div
+                            key={`call-dot-${i}`}
+                            title={`콜 ${formatTime(t)}`}
+                            style={{
+                              position: 'absolute',
+                              left: `calc(${leftPct}% - ${DOT_HALF_PX}px)`,
+                              top: '46%',
+                              transform: 'translateY(-50%)',
+                              pointerEvents: 'auto',
+                              overflow: 'visible',
+                              zIndex: 10,
+                            }}
+                          >
+                            <div className="w-3 h-3 bg-gray-700 rounded-sm" />
+                          </div>
+                        );
+                      })}
+                    </>
+                  );
+                })()}
+              </div>
+
+              <div className="grid gap-2 mt-6" style={{ gridTemplateColumns: colTemplate }}>
                 {buckets.map((b, i) => {
                   const level = b.avgPhysical && Number.isFinite(b.avgPhysical) ? Math.max(0, Math.min(4, Math.round(b.avgPhysical))) : undefined;
                   const cls = level !== undefined ? getStressColor(level, 'physical') : 'bg-white';
@@ -194,7 +287,7 @@ const TimelineChart: React.FC<{
 
               {/* Time labels below (approx. show some labels) */}
               <div
-                className="grid gap-0 mt-4 text-xs font-medium text-gray-600"
+                className="grid gap-0 mt-2 text-xs font-medium text-gray-600"
                 style={{
                   gridTemplateColumns: colTemplate,
                   // 오른쪽 끝 라벨가 잘리지 않도록 컬럼 폭의 절반만큼 오른쪽 패딩 추가
@@ -206,7 +299,7 @@ const TimelineChart: React.FC<{
                   // show label every Nth bucket to avoid crowd
                   const every = Math.max(1, Math.floor(buckets.length / 6));
                   return (
-                    <div key={`lbl-${i}`} className="text-center">
+                    <div key={`lbl-${i}`} className="text-center font-bold">
                       {(i % every === 0 || i === buckets.length - 1) ? formatTime(b.startMs) : ''}
                     </div>
                   );
@@ -225,7 +318,7 @@ const TimelineChart: React.FC<{
                 style={{ left: `${tooltip.leftPercent}%`, top: '60%', transform: 'translate(-50%, 8px)', minWidth: 220 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="font-medium mb-1">추가 데이터 ({b.rows.length}번 응답)</div>
+                <div className="font-medium mb-1">해당 시점에 수집된 데이터 (설문 {b.rows.length}회)</div>
                 <div className="text-xs text-gray-700 space-y-1">
                   {/* Exclude psych/phys from list; show other aggregated features */}
                   {/* <div>행 수: {b.rows.length}</div> */}
@@ -259,9 +352,11 @@ const Timeline: React.FC<TimelineProps> = ({
   selectedDate,
 }) => {
   // load csv (filtered by pid)
-  const { loading, getForDate, getRowsForDate } = useStressData('/data/feature_full.csv', pid);
+  const { loading, getForDate, getRowsForDate, getInterventionsForDate } = useStressData('/data/feature_full.csv', pid);
   const rows = getRowsForDate(selectedDate.toISOString().slice(0, 10));
+  const interventions = getInterventionsForDate(selectedDate.toISOString().slice(0, 10));
   console.log(rows)
+
   // prepare buckets
   const buckets = React.useMemo(() => {
     const out: Array<{
@@ -286,14 +381,6 @@ const Timeline: React.FC<TimelineProps> = ({
       }
       return out;
     }
-
-    // compute actual start/end from data
-    // helper: normalize epoch (seconds or ms) -> ms
-    const toEpochMsLocal = (v: unknown): number => {
-      const n = Number(v);
-      if (Number.isNaN(n)) return NaN;
-      return n < 1e12 ? Math.floor(n * 1000) : Math.floor(n);
-    };
 
     // collect candidate epochs from common fields (preserve local ms)
     const epochs = rows
@@ -425,15 +512,13 @@ const Timeline: React.FC<TimelineProps> = ({
     return out;
   }, [rows, selectedDate]);
 
-  // provide fallback empty arrays if external props not provided
-  const internalSeries = [];
-  const physicalSeries = [];
+  const call_log = rows.map(r => r.calls);
 
   return (
-    <div className="w-full p-6 mb-12">
+    <div className="w-full p-6 mb-24">
       <Header date={selectedDate ?? new Date()} />
       <Legend />
-      <TimelineChart pid={pid} buckets={buckets} />
+      <TimelineChart pid={pid} buckets={buckets} callLog={call_log} interventions={interventions}/>
     </div>
   );
 };

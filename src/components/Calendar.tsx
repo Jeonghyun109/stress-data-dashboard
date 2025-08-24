@@ -182,7 +182,7 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
   const WeekLabels = () => (
     // <div className="grid [grid-template-columns:repeat(7,minmax(0,1fr))_1.6fr] gap-0.5 mt-6"></div>
     <div className="grid grid-cols-7 gap-0.5 mt-6">
-      {['월', '화', '수', '목', '금', '토', '일'].map((day, i) => (
+      {['일', '월', '화', '수', '목', '금', '토'].map((day, i) => (
         <div
           key={day + i}
           className="font-medium text-[#888] text-center text-[15px] mb-1"
