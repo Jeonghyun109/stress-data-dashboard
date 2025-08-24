@@ -214,7 +214,7 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           rawByDate.get(iso)!.push(featureRow);
 
           // existing aggregation inputs (keep same as before)
-          const psych = toNumber(r.stress ?? NaN);
+          const psych = toNumber(r.stress ?? NaN) - 1;
           const rmssd_forAgg = toNumber(r.rmssd ?? NaN);
 
           if (!byDay.has(iso)) {
