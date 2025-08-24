@@ -6,23 +6,19 @@ import DeltaPage from "@/components/DeltaPage";
 /*
   TODOs
   1. 아이콘 추가
-  2. Toggle 열었다 닫았다 할 수 있도록 수정
 */
 const StressType: React.FC = () => {
-  const [openPsy, setOpenPsy] = useState<boolean>(false);
-  const [openPhy, setOpenPhy] = useState<boolean>(false);
-
   return (
     <div className="mb-8">
       <div className="font-semibold text-3xl">{CONTENT.TITLE}</div>
       <div className="my-4 flex flex-row gap-24">
         <div className="w-1/2">
-          <button className="font-semibold text-2xl cursor-pointer" onClick={() => setOpenPsy(!openPsy)}>
+          <button className="font-semibold text-2xl">
             <span className="text-violet-500">{CONTENT.BODY_1.TITLE}</span>
             란?
           </button>
           <div className="mt-4">
-            {openPsy && CONTENT.BODY_1.DESCRIPTION.map((item, index) => (
+            {CONTENT.BODY_1.DESCRIPTION.map((item, index) => (
               <span key={index} style={{ fontWeight: item.BOLD ? 'bold' : 'normal' }}>
                 {item.TXT}
               </span>
@@ -30,7 +26,7 @@ const StressType: React.FC = () => {
           </div>
         </div>
         <div className="w-1/2">
-          <button className="font-semibold text-2xl cursor-pointer" onClick={() => setOpenPhy(!openPhy)}>
+          <button className="font-semibold text-2xl">
             <span className="text-orange-500">{CONTENT.BODY_2.TITLE}</span>
             란?
           </button>
