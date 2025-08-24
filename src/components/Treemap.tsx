@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import type { ApexOptions } from 'apexcharts';
 import { NAMES, STRESSORS, ENV, CONTEXT, CONTENT, DAILY_CONTEXT } from '@/data/stressWhy';
 import useCorrelationData, { TreemapCategory, TreemapGroup } from '@/hooks/useCorrelationData';
-import TreeMapInfo from './report/TreeMapInfo';
+import TreeMapInfo from './report/TreeMapReport';
 
 // SSR에서 window 참조 오류 방지
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -44,8 +44,8 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
     return result
   };
 
-  const psycho_sum: number[] = ['stressor', 'env', 'context', 'daily_context'].map(v => groupedByType[v as TreemapCategory]['psychological'][0].data.map(d => d.y).reduce((acc: number, curr: number) => acc + curr, 0))
-  const physio_sum: number[] = ['stressor', 'env', 'context', 'daily_context'].map(v => groupedByType[v as TreemapCategory]['physiological'][0].data.map(d => d.y).reduce((acc: number, curr: number) => acc + curr, 0))
+  const psycho_sum: number[] = NAMES.map(v => groupedByType[v as TreemapCategory]['psychological'][0].data.map(d => d.y).reduce((acc: number, curr: number) => acc + curr, 0))
+  const physio_sum: number[] = NAMES.map(v => groupedByType[v as TreemapCategory]['physiological'][0].data.map(d => d.y).reduce((acc: number, curr: number) => acc + curr, 0))
 
   const options = (color: string): ApexOptions => {
     // const series = getSeries(topType, type)
@@ -110,6 +110,9 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
             </div>
           </div>
         ))}
+        <div className="mt-4 w-full">
+          <TreeMapInfo pid={pid} type="physiological" />
+        </div>
       </div>
     </div>
   );

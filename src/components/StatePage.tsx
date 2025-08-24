@@ -1,8 +1,8 @@
 import { useState } from "react";
-import Barchart from "./Barchart";
 import Calendar from "./Calendar";
 import Treemap from "./Treemap";
 import { CONTENT } from "@/data/stressWhy";
+import Timeline from "./Timeline";
 
 const StressPage: React.FC<{ pid: string }> = ({ pid }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -19,7 +19,7 @@ const StressPage: React.FC<{ pid: string }> = ({ pid }) => {
 
           {/* Timeline */}
           <div className="flex-1">
-            {/* {selectedDate && <Timeline selectedDate={selectedDate} pid={pid}/>} */}
+            {selectedDate && <Timeline selectedDate={selectedDate} pid={pid} />}
           </div>
         </div>
       </div>

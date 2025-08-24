@@ -15,6 +15,7 @@ export type ContentType = {
 };
 
 export const COLORS: string[] = ['#A93F55', '#52B12C', '#33A1FD', '#1c1e7a'];
+// export const COLORS: string[] = ['#A93F55', '#525252', '#33A1FD', '#1c1e7a'];
 export const NAMES: TreemapCategory[] = ['stressor', 'env', 'context', 'daily_context'];
 
 export const CONTENT: ContentType = {
