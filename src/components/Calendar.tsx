@@ -120,11 +120,10 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
   };
 
   const getDateStyle = (date: Date) => {
-  if (date.getMonth() !== month) return { className: 'text-gray-400', style: { backgroundColor: '#F3F4F6' } };
-  // Use local date string for key to match useStressData
-  const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  console.log(date, key)
-  const data = getForDate(key) ?? { psych: -1, phys: -1 };
+    if (date.getMonth() !== month) return { className: 'text-gray-400', style: { backgroundColor: '#F3F4F6' } };
+    // Use local date string for key to match useStressData
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const data = getForDate(key) ?? { psych: -1, phys: -1 };
     const psych = data.psych;
     const phys = data.phys;
 

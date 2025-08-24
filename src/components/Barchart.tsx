@@ -59,7 +59,9 @@ const Barchart: React.FC<{ pid?: string | number }> = ({ pid }) => {
   return (
     perceivedSeriesSorted.length > 0 && physioSeriesSorted.length > 0 && <div className="w-full my-4 flex gap-20 justify-between">
       <div className="w-1/2">
-        <div className="font-semibold text-2xl">{CONTENT.BODY_1.TITLE}</div>
+        <div className="font-semibold text-2xl">{CONTENT.BODY_1.TITLE.map((part, index) => (
+          <span key={index} className={part.color}>{part.txt}</span>
+        ))}</div>
         <ReactApexChart
           options={baseOptions('#14b8a6', categoriesPerceivedSorted)}
           series={perceivedApex}
@@ -72,7 +74,9 @@ const Barchart: React.FC<{ pid?: string | number }> = ({ pid }) => {
         </div>
       </div>
       <div className="w-1/2">
-        <div className="font-semibold text-2xl">{CONTENT.BODY_2.TITLE}</div>
+        <div className="font-semibold text-2xl">{CONTENT.BODY_2.TITLE.map((part, index) => (
+          <span key={index} className={part.color}>{part.txt}</span>
+        ))}</div>
         <ReactApexChart
           options={baseOptions('#a3e635', categoriesPhysioSorted)}
           series={physioApex}

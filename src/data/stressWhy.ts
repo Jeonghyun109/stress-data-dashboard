@@ -3,12 +3,12 @@ import { TreemapCategory } from "@/hooks/useCorrelationData";
 export type ContentType = {
   TITLE: string;
   BODY_1: {
-    TITLE: string;
+    TITLE: { txt: string, color: string }[];
     CATEGORY: Array<{ NAME: string; COLOR: string }>;
     // DESCRIPTION: Array<{ TXT: string; BOLD: boolean }>;
   };
   BODY_2: {
-    TITLE: string;
+    TITLE: { txt: string, color: string }[];
     CATEGORY: Array<{ NAME: string; COLOR: string }>;
     // DESCRIPTION: Array<{ TXT: string; BOLD: boolean }>;
   };
@@ -21,8 +21,11 @@ export const NAMES: TreemapCategory[] = ['stressor', 'env', 'context', 'daily_co
 export const CONTENT: ContentType = {
   TITLE: "지난 한 달 동안, 당신은 왜 스트레스를 받았나요?",
   BODY_1: {
-    TITLE: "나의 인지 스트레스와 관련된 데이터", // TODO - 스트레스 이름 색 다르게 + 아이콘
-    // TITLE: "나의 인지 스트레스를 저감시킨 스트레스 완화 활동",
+    TITLE: [
+      { txt: "나의 ", color: '' },
+      { txt: "인지 스트레스", color: 'text-violet-500' },
+      { txt: "와 관련된 데이터", color: '' },
+    ],
     CATEGORY: [
       { NAME: "스트레스 요인", COLOR: COLORS[0] },
       { NAME: "환경 데이터", COLOR: COLORS[1] },
@@ -38,8 +41,11 @@ export const CONTENT: ContentType = {
     // ]
   },
   BODY_2: {
-    TITLE: "나의 신체 스트레스와 관련된 데이터", // TODO - 스트레스 이름 색 다르게 + 아이콘
-    // TITLE: "나의 신체 스트레스를 저감시킨 스트레스 완화 활동",
+    TITLE: [
+      { txt: "나의 ", color: '' },
+      { txt: "신체 스트레스", color: 'text-orange-500' },
+      { txt: "와 관련된 데이터", color: '' },
+    ],
     CATEGORY: [
       { NAME: "스트레스 요인", COLOR: COLORS[0] },
       { NAME: "환경 데이터", COLOR: COLORS[1] },

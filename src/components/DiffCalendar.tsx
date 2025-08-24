@@ -40,7 +40,7 @@ const Header: React.FC<{
   showPhys: boolean;
   setShowPhys: (v: boolean) => void;
 }> = ({ showPsych, setShowPsych, showPhys, setShowPhys }) => (
-  <div className="mb-6 flex flex-col items-center justify-between">
+  <div className="mb-6 flex flex-col justify-between">
     <h2 className="text-2xl font-bold text-gray-800">일간 스트레스 변화 캘린더</h2>
     <div className="w-full flex flex-col items-end gap-2 mt-6">
       <ToggleSwitch active={showPsych} onToggle={() => setShowPsych(!showPsych)} color="#2dd4bf" label="인지 스트레스 점수" />
@@ -202,7 +202,7 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
 
   return (
     // <div className="w-[658px] mx-auto font-sans p-6">
-    <div className="w-[338px] mx-auto font-sans p-6">
+    <div className="w-[338px] mx-auto font-sans py-6 pl-0 pr-6">
       <Header showPsych={showPsych} setShowPsych={setShowPsych} showPhys={showPhys} setShowPhys={setShowPhys} />
       <MonthNavigation />
       <WeekLabels />
@@ -211,7 +211,7 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
         {splitWeeks(dates).map((week, w_idx) => (
           <React.Fragment key={`week-${w_idx}`}>
             {week.map((date, idx) => {
-              const base = 'w-[40px] h-[40px] first:rounded-tl-xl nth-7:rounded-tr-xl nth-36:rounded-bl-xl last:rounded-br-xl text-center leading-[40px] mx-auto hover:font-bold';
+              const base = 'w-[44px] h-[40px] first:rounded-tl-xl nth-7:rounded-tr-xl nth-36:rounded-bl-xl last:rounded-br-xl text-center leading-[40px] mx-auto hover:font-bold';
               const ds = getDateStyle(date);
               return (
                 <button
