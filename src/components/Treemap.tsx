@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import type { ApexOptions } from 'apexcharts';
 import { NAMES, STRESSORS, ENV, CONTEXT, CONTENT, DAILY_CONTEXT } from '@/data/stressWhy';
 import useCorrelationData, { TreemapCategory, TreemapGroup } from '@/hooks/useCorrelationData';
+import TreeMapInfo from './report/TreeMapInfo';
 
 // SSR에서 window 참조 오류 방지
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -94,6 +95,9 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
             </div>
           </div>
         ))}
+        <div className="mt-4 w-full">
+          <TreeMapInfo pid={pid} type="psychological" />
+        </div>
       </div>
       {/* 신체 스트레스 */}
       <div className="w-1/2">
