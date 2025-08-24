@@ -23,19 +23,17 @@ const toNumber = (v: unknown) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : NaN;
 };
-const isValid = (v: number) => !Number.isNaN(v);
 const mean = (arr: number[]) => arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : NaN;
 const getRange = (vals: number[]) => {
-  const clean = vals.filter(isValid);
+  const clean = vals;
   if (!clean.length) return { min: NaN, max: NaN };
   return { min: Math.min(...clean), max: Math.max(...clean) };
 };
 const normalize = (v: number, min: number, max: number) => {
-  if (!isValid(v) || !isValid(min) || !isValid(max) || max === min) return NaN;
+  if (max === min) return NaN;
   return (v - min) / (max - min);
 };
 const rawToLevel = (x: number) => {
-  if (!isValid(x)) return 0;
   return Math.max(0, Math.min(4, Math.round(x * 4)));
 };
 // helper to coerce boolean-like / True/False / 1/0 to 1 or 0
@@ -73,13 +71,15 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           skipEmptyLines: true,
         });
         const rows = parsed.data as Array<Record<string, any>>;
+        // isValid column으로 필터랑
+        const validRows = rows.filter(r => r.isValid === 'True' || r.isValid === 'TRUE' || r.isValid === true || r.isValid === 1);
         // PID로 먼저 필터링 (있을 때만)
         const filteredRows = pid
-          ? rows.filter(r => {
-              const rowPid = String(r.pid ?? r.participant_id ?? r.user_id ?? '');
+          ? validRows.filter(r => {
+              const rowPid = String(r.pid ?? '');
               return rowPid === pid;
             })
-          : rows;
+          : validRows;
         // console.log(filteredRows);
 
         // Intervention Records
@@ -145,7 +145,7 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           const hr_min = toNumber(r.hr_min ?? NaN);
           const hr_max = toNumber(r.hr_max ?? NaN);
           const hr_mean = toNumber(r.hr_mean ?? NaN);
-          const hr_minmax = (isValid(hr_min) && isValid(hr_max)) ? (hr_max - hr_min) : NaN;
+          const hr_minmax = hr_max - hr_min;
           const acc_mean = toNumber(r.acc_mean ?? NaN);
           const acc_std = toNumber(r.acc_std ?? NaN);
 
@@ -161,15 +161,15 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
             isoTime: tRaw.toISOString(), // 추가된 필드
             calls,
             // stress
-            stress: isValid(stress) ? stress : undefined,
+            stress,
             // physiological
-            rmssd: isValid(rmssd) ? rmssd : undefined,
+            rmssd,
             // call context
-            workload: isValid(workload) ? workload : undefined,
-            arousal: isValid(arousal) ? arousal : undefined,
-            valence: isValid(valence) ? valence : undefined,
-            tiredness: isValid(tiredness) ? tiredness : undefined,
-            surface_acting: isValid(surface_acting) ? surface_acting : undefined,
+            workload,
+            arousal,
+            valence,
+            tiredness,
+            surface_acting,
             call_type_angry,
             // stressor flags
             stressor_lack_ability: lack_ability,
@@ -183,26 +183,26 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
             stressor_peer_conflict: peer_conflict,
             stressor_other,
             // daily
-            daily_arousal: isValid(daily_arousal) ? daily_arousal : undefined,
-            daily_valence: isValid(daily_valence) ? daily_valence : undefined,
-            daily_tiredness: isValid(daily_tiredness) ? daily_tiredness : undefined,
-            daily_general_health: isValid(daily_general_health) ? daily_general_health : undefined,
-            daily_general_sleep: isValid(daily_general_sleep) ? daily_general_sleep : undefined,
+            daily_arousal: daily_arousal,
+            daily_valence: daily_valence,
+            daily_tiredness: daily_tiredness,
+            daily_general_health: daily_general_health,
+            daily_general_sleep: daily_general_sleep,
             // phys signals
-            steps: isValid(steps) ? steps : undefined,
-            skintemp: isValid(skinTemp) ? skinTemp : undefined,
-            skintemp_diff: isValid(skinTempDiff) ? skinTempDiff : undefined,
-            hr_min: isValid(hr_min) ? hr_min : undefined,
-            hr_max: isValid(hr_max) ? hr_max : undefined,
-            hr_mean: isValid(hr_mean) ? hr_mean : undefined,
-            hr_minmax: isValid(hr_minmax) ? hr_minmax : undefined,
-            acc_mean: isValid(acc_mean) ? acc_mean : undefined,
-            acc_std: isValid(acc_std) ? acc_std : undefined,
+            steps: steps,
+            skintemp: skinTemp,
+            skintemp_diff: skinTempDiff,
+            hr_min: hr_min,
+            hr_max: hr_max,
+            hr_mean: hr_mean,
+            hr_minmax: hr_minmax,
+            acc_mean: acc_mean,
+            acc_std: acc_std,
             // environment
-            humidity_mean: isValid(humidity_mean) ? humidity_mean : undefined,
-            co2_mean: isValid(co2_mean) ? co2_mean : undefined,
-            tvoc_mean: isValid(tvoc_mean) ? tvoc_mean : undefined,
-            temperature_mean: isValid(temperature_mean) ? temperature_mean : undefined,
+            humidity_mean: humidity_mean,
+            co2_mean: co2_mean,
+            tvoc_mean: tvoc_mean,
+            temperature_mean: temperature_mean,
             // intervention info (if this row is an intervention survey)
             interventionName: r.surveyName === 'after_intervention_survey' ? (r.interventionName ?? r.intervention ?? undefined) : undefined,
             interventionTime: r.surveyName === 'after_intervention_survey' ? (tRaw.toISOString()) : undefined,
@@ -221,8 +221,8 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
             byDay.set(iso, { psychVals: [], rmssdVals: [] });
           }
           const entry = byDay.get(iso)!;
-          if (isValid(psych)) entry.psychVals.push(psych);
-          if (isValid(rmssd_forAgg)) entry.rmssdVals.push(rmssd_forAgg);
+          entry.psychVals.push(psych);
+          entry.rmssdVals.push(rmssd_forAgg);
         }
 
         // 날짜별로 묶인 행들을 콘솔에 출력
@@ -245,29 +245,27 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
 
         const out = new Map<string, DailyStress>();
         for (const d of days) {
-          const psychRaw = isValid(d.psychMean) ? d.psychMean : NaN;
+          const psychRaw = d.psychMean;
 
           const components: number[] = [];
-          const nrmssd = isValid(d.rmssdMean) ? normalize(d.rmssdMean, rmssdRange.min, rmssdRange.max) : NaN;
-          if (isValid(nrmssd)) components.push(1 - nrmssd); // inverse
+          const nrmssd = normalize(d.rmssdMean, rmssdRange.min, rmssdRange.max);
+          components.push(1 - nrmssd); // inverse
           const physRaw = components.length ? components.reduce((s, v) => s + v, 0) / components.length : NaN;
 
-          const psychLevel = isValid(psychRaw) ? Math.round(psychRaw) : 0;
-          const physLevel = isValid(physRaw) ? rawToLevel(physRaw) : 0;
+          const psychLevel = Math.round(psychRaw);
+          const physLevel = rawToLevel(physRaw);
 
-          const psychPresent = isValid(d.psychMean);
+          const psychPresent = d.psychMean;
           const physPresent = !Number.isNaN(d.rmssdMean);
 
           out.set(d.iso, {
             psych: psychLevel,
             phys: physLevel,
-            psychRaw: isValid(psychRaw) ? psychRaw : undefined,
-            physRaw: isValid(physRaw) ? physRaw : undefined,
+            psychRaw: psychRaw,
+            physRaw: physRaw,
             count: d.count,
           });
         }
-
-        
 
         if (mounted) {
           setDailyMap(out);
