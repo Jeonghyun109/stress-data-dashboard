@@ -21,8 +21,8 @@ const BarChartTemplate: React.FC<{
   const stressType = type === 'psychological' ? <strong className="text-violet-500">인지 스트레스</strong> : <strong className="text-orange-500">신체 스트레스</strong>;
   const stressTypeText = type === 'psychological' ? '인지 스트레스' : '신체 스트레스';
 
-  const topInterventionNames = topInterventions.map(item => item.name);
-  const worstInterventionNames = worstInterventions.map(item => item.name);
+  const topInterventionNames = topInterventions.map(item => `${item.name} (${item.value.toFixed(1)}%)`);
+  const worstInterventionNames = worstInterventions.map(item => `${item.name} (${item.value.toFixed(1)}%)`);
 
   return <>
     당신의 {stressType}는 <strong style={{ color: '#14b8a6' }}>{topInterventionNames.join(', ')}</strong>{josa.pick(topInterventionNames.at(-1) ?? '', '을/를')} 했을 때 많이 저감되었습니다. <br />
