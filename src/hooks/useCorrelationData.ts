@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Papa from "papaparse";
-import { stressor_list as STRESSOR_MAP, env_list as ENV_MAP, context_list as CONTEXT_MAP } from "@/data/stressWhy";
+// import { stressor_list as STRESSOR_MAP, env_list as ENV_MAP, context_list as CONTEXT_MAP } from "@/data/stressWhy";
 
 export type CorRow = {
   pid: string;
@@ -12,6 +12,15 @@ export type CorRow = {
 
 export type TreemapDatum = { x: string; y: number; raw?: number | null };
 export type TreemapGroup = { name: string; data: TreemapDatum[] };
+export type TreemapCategory = "stressor" | "env" | "context" | "daily_context" | "other";
+
+type GroupedByType = {
+  stressor: { psychological: TreemapGroup[]; physiological: TreemapGroup[] };
+  env: { psychological: TreemapGroup[]; physiological: TreemapGroup[] };
+  context: { psychological: TreemapGroup[]; physiological: TreemapGroup[] };
+  daily_context: { psychological: TreemapGroup[]; physiological: TreemapGroup[] };
+  other: { psychological: TreemapGroup[]; physiological: TreemapGroup[] };
+};
 
 type UseCorrelationResult = {
   loading: boolean;
@@ -21,12 +30,7 @@ type UseCorrelationResult = {
   psychologicalSeries: TreemapGroup[];
   physiologicalSeries: TreemapGroup[];
   // separated top-level groups
-  groupedByType: {
-    stressor: { psychological: TreemapGroup[]; physiological: TreemapGroup[] };
-    env: { psychological: TreemapGroup[]; physiological: TreemapGroup[] };
-    context: { psychological: TreemapGroup[]; physiological: TreemapGroup[] };
-    other: { psychological: TreemapGroup[]; physiological: TreemapGroup[] };
-  };
+  groupedByType: GroupedByType;
   // convenience getters
   getRowsForPid: (pid?: string) => CorRow[];
   getSeriesForPid: (pid?: string) => { psychological: TreemapGroup[]; physiological: TreemapGroup[] };
@@ -47,10 +51,11 @@ export default function useCorrelationData(csvUrl = "/data/correlation.csv", pid
   const [rows, setRows] = useState<CorRow[]>([]);
   const [psychSeries, setPsychSeries] = useState<TreemapGroup[]>([]);
   const [physSeries, setPhysSeries] = useState<TreemapGroup[]>([]);
-  const [groupedByType, setGroupedByType] = useState<UseCorrelationResult["groupedByType"]>({
+  const [groupedByType, setGroupedByType] = useState<GroupedByType>({
     stressor: { psychological: [], physiological: [] },
     env: { psychological: [], physiological: [] },
     context: { psychological: [], physiological: [] },
+    daily_context: { psychological: [], physiological: [] },
     other: { psychological: [], physiological: [] },
   });
 
@@ -89,21 +94,24 @@ export default function useCorrelationData(csvUrl = "/data/correlation.csv", pid
           stressor: new Map<string, TreemapDatum[]>(),
           env: new Map<string, TreemapDatum[]>(),
           context: new Map<string, TreemapDatum[]>(),
+          daily_context: new Map<string, TreemapDatum[]>(),
           other: new Map<string, TreemapDatum[]>(),
         };
         const typePhys = {
           stressor: new Map<string, TreemapDatum[]>(),
           env: new Map<string, TreemapDatum[]>(),
           context: new Map<string, TreemapDatum[]>(),
+          daily_context: new Map<string, TreemapDatum[]>(),
           other: new Map<string, TreemapDatum[]>(),
         };
 
         for (const r of filtered) {
           const cat = (r.category || "uncategorized").trim().toLowerCase();
           // Use category column directly: accept only 'stressor', 'env' (or 'environment'), 'context'
-          let topType: "stressor" | "env" | "context" | "other" = "other";
+          let topType: TreemapCategory = "other";
           if (cat === "stressor") topType = "stressor";
           else if (cat === "context") topType = "context";
+          else if (r.feature.startsWith("daily_")) topType = "daily_context";
           else if (cat === "env" || cat === "environment") topType = "env";
 
           if (r.stress !== undefined && r.stress !== null && !Number.isNaN(Number(r.stress))) {
@@ -148,6 +156,7 @@ export default function useCorrelationData(csvUrl = "/data/correlation.csv", pid
           stressor: { psychological: makeGroups(typePsych.stressor), physiological: makeGroups(typePhys.stressor) },
           env: { psychological: makeGroups(typePsych.env), physiological: makeGroups(typePhys.env) },
           context: { psychological: makeGroups(typePsych.context), physiological: makeGroups(typePhys.context) },
+          daily_context: { psychological: makeGroups(typePsych.daily_context), physiological: makeGroups(typePhys.daily_context) },
           other: { psychological: makeGroups(typePsych.other), physiological: makeGroups(typePhys.other) },
         };
 
@@ -158,9 +167,9 @@ export default function useCorrelationData(csvUrl = "/data/correlation.csv", pid
           setGroupedByType(groupedOut);
           setLoading(false);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (mounted) {
-          setError(err?.message ?? String(err));
+          setError(err instanceof Error ? err.message : String(err));
           setLoading(false);
         }
       }
@@ -197,6 +206,8 @@ export default function useCorrelationData(csvUrl = "/data/correlation.csv", pid
       physiological: Array.from(g2.entries()).map(([name, data]) => ({ name, data })),
     };
   };
+
+  console.log(groupedByType)
 
   return {
     loading,
