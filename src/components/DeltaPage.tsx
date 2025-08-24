@@ -1,4 +1,4 @@
-import { CONTENT } from "@/data/stressType";
+import { CONTENT } from "@/data/stressTime";
 import Barchart from "./Barchart";
 import { useState } from "react";
 import DiffCalendar from "./DiffCalendar";
@@ -25,7 +25,7 @@ const DeltaPage: React.FC<{ pid: string }> = ({ pid }) => {
         </div>
       </div>
       <div>
-        <div className="font-semibold text-3xl">지난 한 달 동안, 당신은 왜 스트레스를 받았나요?</div>
+        <div className="font-semibold text-3xl mt-12">지난 한 달 동안, 스트레스 완화 활동이 실제로 도움이 되었나요?</div>
         <div className="flex flex-col gap-8 items-start">
           {/* Barchart */}
           {pid && <Barchart pid={pid} />}

@@ -42,7 +42,7 @@ const Header: React.FC<{
 }> = ({ showPsych, setShowPsych, showPhys, setShowPhys }) => (
   <div className="mb-6 flex flex-col items-center justify-between">
     <h2 className="text-2xl font-bold text-gray-800">일간 스트레스 변화 캘린더</h2>
-    <div className="w-full flex flex-col items-end gap-2">
+    <div className="w-full flex flex-col items-end gap-2 mt-6">
       <ToggleSwitch active={showPsych} onToggle={() => setShowPsych(!showPsych)} color="#2dd4bf" label="인지 스트레스 점수" />
       <ToggleSwitch active={showPhys} onToggle={() => setShowPhys(!showPhys)} color="#a3e635" label="신체 스트레스 점수" />
     </div>

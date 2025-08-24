@@ -15,9 +15,9 @@ const StressType: React.FC = () => {
       </div>
       <div className="my-4 flex flex-row gap-24">
         <div className="w-1/2 pr-8">
-          <button className="font-semibold text-2xl flex items-center gap-2">
+          <button className="font-semibold text-2xl flex items-center">
             <img src="/icons/PsychologicalStressIcon.svg" alt="인지 스트레스 아이콘" className="w-7 h-7 inline-block align-middle" />
-            <span className="text-violet-500">{CONTENT.BODY_1.TITLE}</span>
+            <span className="ml-2 text-violet-500">{CONTENT.BODY_1.TITLE}</span>
             란?
           </button>
           <div className="mt-4">
@@ -29,9 +29,9 @@ const StressType: React.FC = () => {
           </div>
         </div>
         <div className="w-1/2 pr-8">
-          <button className="font-semibold text-2xl flex items-center gap-2">
+          <button className="font-semibold text-2xl flex items-center">
             <img src="/icons/PhysiologicalStressIcon.svg" alt="신체 스트레스 아이콘" className="w-7 h-7 inline-block align-middle" />
-            <span className="text-orange-500">{CONTENT.BODY_2.TITLE}</span>
+            <span className="ml-2 text-orange-500">{CONTENT.BODY_2.TITLE}</span>
             란?
           </button>
           <div className="mt-4">

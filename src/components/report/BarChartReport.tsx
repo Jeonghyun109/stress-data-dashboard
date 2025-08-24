@@ -30,8 +30,6 @@ const BarChartTemplate: React.FC<{
     {worstInterventions.length > 0 && worstInterventions[0]?.value < 0 && <>
       반면, <strong style={{ color: '#f87171' }}>{worstInterventionNames.join(', ')}</strong>를 했을 때는 오히려 {stressTypeText}가 증가하는 경향을 보였습니다.<br />
     </>}
-
-    더 자세한 효과를 보고 싶으시다면, 차트 위에 마우스를 올려보세요!
   </>
 }
 

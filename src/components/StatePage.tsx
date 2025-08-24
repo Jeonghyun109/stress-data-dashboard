@@ -25,7 +25,7 @@ const StressPage: React.FC<{ pid: string }> = ({ pid }) => {
         </div>
       </div>
       <div>
-        <div className="font-semibold text-3xl">지난 한 달 동안, 당신은 왜 스트레스를 받았나요?</div>
+        <div className="font-semibold text-3xl mt-12">지난 한 달 동안, 당신은 왜 스트레스를 받았나요?</div>
         <div className="flex flex-col gap-8 items-start">
           {/* Treemap */}
           {pid && <Treemap pid={pid} />}
