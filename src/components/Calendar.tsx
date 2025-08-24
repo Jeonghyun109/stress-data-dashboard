@@ -66,7 +66,6 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
   const [showPhys, setShowPhys] = useState<boolean>(false);
   
   const { loading, dailyMap, getForDate } = useStressData('/data/feature_full.csv', pid);
-  console.log(dailyMap)
 
   useEffect(() => {
     const first = new Date(year, month, 1).getDay();
@@ -98,58 +97,60 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
     return weeks;
   };
 
-  // Placeholder for coloring logic
-  const getDateColor = (date: Date) => {
-    if (date.getDate() === today.getDate()) return 'bg-red-100';
-    if (date.getMonth() !== month) return 'text-gray-400 bg-gray-100';
-    return 'bg-white';
-  };
+// Timeline과 동일한 클래스 매핑 (0..4)
+const STRESS_CLASSES = {
+  'Psychological': ['bg-white', 'bg-violet-50', 'bg-violet-100', 'bg-violet-200', 'bg-violet-400'],
+  'Physiological': ['bg-white', 'bg-yellow-100', 'bg-yellow-200', 'bg-yellow-300', 'bg-yellow-500'],
+} as const;
 
-  // deterministic synthetic stress data per date (replace with real data later)
-  const stressData = useMemo(() => {
-    const map = new Map<string, { psych: number; phys: number }>();
-    for (const d of dates) {
-      const key = d.toISOString().slice(0, 10);
-      // deterministic pseudo-values:
-      const psych = (d.getDate() + d.getMonth()) % 4; // 0..3
-      const phys = (3*d.getDate() + (d.getMonth() + 1)) % 4; // 0..3
-      map.set(key, { psych, phys });
-    }
-    return map;
-  }, [dates]);
+// 동일 매핑의 대략적인 HEX 값(그라디언트 생성용)
+const STRESS_HEX = {
+  'Psychological': ['#ffffff', '#F5F3FF', '#EDE9FE', '#C4B5FD', '#A78BFA'],
+  'Physiological': ['#ffffff', '#FFFBEB', '#FEF3C7', '#FDE68A', '#F59E0B'],
+} as const;
 
-  const levelToHex = (type: Stress, lvl: number) => {
-    // hex colors for levels (0 = none -> white/transparent)
-    const scales = {
-      Psychological: ['#ffffff', '#F5F3FF', '#DDD6FE', '#7C3AED'], // none -> light -> medium -> strong (purple)
-      Physiological: ['#ffffff', '#FFFBEB', '#FEF3C7', '#F59E0B'], // none -> light -> medium -> strong (amber)
-    } as Record<Stress, string[]>;
-    return lvl === -1 ? '#c6c6c6' : scales[type][lvl];
-  };
+// 기존 levelToHex 제거/대체 — 클래스 또는 hex 반환용 헬퍼
+const levelToClass = (type: Stress, lvl: number) => {
+  if (lvl < 0) return '';
+  return STRESS_CLASSES[type][lvl] ?? '';
+};
+const levelToHex = (type: Stress, lvl: number) => {
+  if (lvl < 0) return '#ffffff';
+  return STRESS_HEX[type][lvl] ?? '#ffffff';
+};
 
   const getDateStyle = (date: Date) => {
     if (date.getMonth() !== month) return { className: 'text-gray-400', style: { backgroundColor: '#F3F4F6' } };
 
     const key = date.toISOString().slice(0, 10);
-    // const data = stressData.get(key) ?? { psych: 0, phys: 0 };
     const data = getForDate(key) ?? { psych: -1, phys: -1 };
-    const psychColor = levelToHex('Psychological', data.psych);
-    const physColor = levelToHex('Physiological', data.phys);
+    const psych = data.psych;
+    const phys = data.phys;
 
     // when both toggles off -> neutral
     if (!showPsych && !showPhys) return { className: '', style: { backgroundColor: '#ffffff' } };
 
-    // only psych
-    if (showPsych && !showPhys) return { className: '', style: { backgroundColor: psychColor } };
+    // only psych -> apply Tailwind bg class
+    if (showPsych && !showPhys) {
+      const cls = levelToClass('Psychological' as Stress, psych);
 
-    // only phys
-    if (!showPsych && showPhys) return { className: '', style: { backgroundColor: physColor } };
+      return { className: cls, style: {} };
+    }
 
-    // both shown -> split gradient (left phys, right psych)
+    // only phys -> apply Tailwind bg class
+    if (!showPsych && showPhys) {
+      const cls = levelToClass('Physiological' as Stress, phys);
+
+      return { className: cls, style: {} };
+    }
+
+    // both shown -> split gradient (left phys, right psych) using HEX equivalents
+    const physHex = levelToHex('Physiological' as Stress, phys);
+    const psychHex = levelToHex('Psychological' as Stress, psych);
     return {
       className: '',
       style: {
-        backgroundImage: `linear-gradient(-45deg, ${physColor} 50%, ${psychColor} 50%)`,
+        backgroundImage: `linear-gradient(-45deg, ${physHex} 50%, ${psychHex} 50%)`,
         backgroundRepeat: 'no-repeat',
       },
     };
@@ -194,8 +195,6 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
     </div>
   );
 
-  let summary = { 'avg': 1, 'min': 0, 'max': 2 };
-
   return (
     // <div className="w-[658px] mx-auto font-sans p-6">
     <div className="w-[338px] mx-auto font-sans p-6">
@@ -213,10 +212,9 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
             return (
               <button 
                 key={idx} 
-                className={`${base} padding-2 ${getDateColor(date)} ${date === selectedDate ? 'font-bold' : 'font-medium'}`} 
+                className={`${base} padding-2 ${getDateStyle(date).className} ${date === selectedDate ? 'font-bold' : 'font-medium'}`} 
                 onClick={() => {
                   if (date.getMonth() < minMonth || date.getMonth() > maxMonth) return;
-                  console.log(date.getMonth(), month)
                   if (date.getMonth() !== month){
                     setMonth(date.getMonth());
                   }

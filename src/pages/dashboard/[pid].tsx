@@ -75,7 +75,7 @@ const Home: React.FC = () => {
           
           {/* Timeline */}
           <div className="flex-1">
-            {/* {selectedDate && <Timeline selectedDate={selectedDate} pid={pid}/>} */}
+            {selectedDate && <Timeline selectedDate={selectedDate} pid={pid}/>}
           </div>
         </div>
         </div>

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import Papa from 'papaparse';
 
 type DailyStress = {
-  psych: number;     // 0..3
-  phys: number;      // 0..3
+  psych: number;     // 0..4
+  phys: number;      // 0..4
   psychRaw?: number; // 0..1 normalized raw
   physRaw?: number;  // 0..1 normalized raw
   count: number;
@@ -13,11 +13,38 @@ type UseStressDataResult = {
   loading: boolean;
   error: string | null;
   dailyMap: Map<string, DailyStress>;
-  // convenience getter
   getForDate: (isoDate: string) => DailyStress | undefined;
-  // raw rows for a specific date (if you need time-of-day data)
   getRowsForDate: (isoDate: string) => Array<Record<string, any>>;
 };
+
+/* --- helpers --- */
+const toNumber = (v: unknown) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : NaN;
+};
+const isValid = (v: number) => !Number.isNaN(v);
+const mean = (arr: number[]) => arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : NaN;
+const getRange = (vals: number[]) => {
+  const clean = vals.filter(isValid);
+  if (!clean.length) return { min: NaN, max: NaN };
+  return { min: Math.min(...clean), max: Math.max(...clean) };
+};
+const normalize = (v: number, min: number, max: number) => {
+  if (!isValid(v) || !isValid(min) || !isValid(max) || max === min) return NaN;
+  return (v - min) / (max - min);
+};
+const rawToLevel = (x: number) => {
+  if (!isValid(x)) return 0;
+  return Math.max(0, Math.min(4, Math.round(x * 4)));
+};
+// helper to coerce boolean-like / True/False / 1/0 to 1 or 0
+const boolTo1 = (v: unknown) => {
+  if (v === true) return 1;
+  if (v === 'True' || v === 'true') return 1;
+  if (v === 1 || v === '1') return 1;
+  return 0;
+};
+/* --- end helpers --- */
 
 export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: string): UseStressDataResult {
   const [loading, setLoading] = useState(true);
@@ -26,12 +53,14 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
   const [rowsByDate, setRowsByDate] = useState<Map<string, Array<Record<string, any>>>>(new Map());
 
   useEffect(() => {
-    console.log("useStressData received PID ", pid)
+    console.log('useStressData received PID ', pid);
     let mounted = true;
+
     const load = async () => {
       try {
         setLoading(true);
         setError(null);
+
         const resp = await fetch(csvUrl);
         if (!resp.ok) throw new Error(`fetch failed: ${resp.status}`);
         const text = await resp.text();
@@ -42,117 +71,186 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           skipEmptyLines: true,
         });
         const rows = parsed.data as Array<Record<string, any>>;
-
-        // collect per-day raw lists
+        // PID로 먼저 필터링 (있을 때만)
+        const filteredRows = pid
+          ? rows.filter(r => {
+              const rowPid = String(r.pid ?? r.participant_id ?? r.user_id ?? '');
+              return rowPid === pid;
+            })
+          : rows;
+        // console.log(filteredRows);
+        
         const byDay = new Map<string, {
-          psychVals: number[];
-          hrVals: number[];
-          rmssdVals: number[];
-          accVals: number[];
-        }>();
-        // also keep original rows per local-date for timeline use
-        const rawByDate = new Map<string, Array<Record<string, any>>>();
-
-        for (const r of rows) {
-          // filter by pid if provided
+           psychVals: number[];
+           rmssdVals: number[];
+         }>();
+         const rawByDate = new Map<string, Array<Record<string, any>>>(); // now will contain feature objects per row
+ 
+        for (const r of filteredRows) {
           const rowPid = String(r.pid ?? r.participant_id ?? r.user_id ?? '');
-          if (pid && rowPid !== pid) continue;
+          const tRaw = new Date(r.surveyTime);
+          const iso = tRaw.toISOString().slice(0, 10); // 'YYYY-MM-DD'
 
-          // prefer windowStartTime -> surveyTime -> callEndTime (epoch). normalize to ms and use local date
-          const tRaw = Number(r.windowStartTime ?? r.surveyTime ?? r.callEndTime);
-          if (!tRaw || Number.isNaN(tRaw)) continue;
-          const epochMs = tRaw < 1e12 ? tRaw * 1000 : tRaw;
-          const dt = new Date(epochMs);
-          const iso = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+          // build feature object for this row (pick requested fields)
+          const stress = toNumber(r.stress ?? NaN); // cognitive stress 0..4
+          const rmssd = toNumber(r.rmssd ?? NaN); // physiological (IBI-derived)
+          const workload = toNumber(r.workload ?? NaN);
+          const arousal = toNumber(r.arousal ?? NaN);
+          const valence = toNumber(r.valence ?? NaN);
+          const tiredness = toNumber(r.tiredness ?? NaN);
+          const surface_acting = toNumber(r.surface_acting ?? NaN);
 
-          // store raw row for that local date
+          const call_type_angry = boolTo1(r.call_type_angry ?? 0);
+
+          // stressor flags (columns in CSV like stressor_lack_ability ...)
+          const lack_ability = boolTo1(r.stressor_lack_ability ?? r.lack_ability ?? 0);
+          const difficult_work = boolTo1(r.stressor_difficult_work ?? r.difficult_work ?? 0);
+          const eval_pressure = boolTo1(r.stressor_eval_pressure ?? r.eval_pressure ?? 0);
+          const work_bad = boolTo1(r.stressor_work_bad ?? r.work_bad ?? 0);
+          const hard_communication = boolTo1(r.stressor_hard_communication ?? r.hard_communication ?? 0);
+          const rude_customer = boolTo1(r.stressor_rude_customer ?? r.rude_customer ?? 0);
+          const time_pressure = boolTo1(r.stressor_time_pressure ?? r.time_pressure ?? 0);
+          const noise = boolTo1(r.stressor_noise ?? r.noise ?? 0);
+          const peer_conflict = boolTo1(r.stressor_peer_conflict ?? r.peer_conflict ?? 0);
+          const stressor_other = boolTo1(r.stressor_other ?? 0);
+
+          // daily context
+          const daily_arousal = toNumber(r.daily_arousal ?? NaN);
+          const daily_valence = toNumber(r.daily_valence ?? NaN);
+          const daily_tiredness = toNumber(r.daily_tiredness ?? r.daily_tirednesss ?? NaN);
+          const daily_general_health = toNumber(r.daily_general_health ?? NaN);
+          const daily_general_sleep = toNumber(r.daily_general_sleep_quality ?? r.daily_general_sleep ?? NaN);
+
+          // physiological
+          const steps = toNumber(r.steps ?? NaN);
+          const skinTemp = toNumber(r.skintemp ?? r.skinTemp ?? NaN);
+          const skinTempDiff = toNumber(r.skintemp_diff ?? NaN);
+          const hr_min = toNumber(r.hr_min ?? NaN);
+          const hr_max = toNumber(r.hr_max ?? NaN);
+          const hr_mean = toNumber(r.hr_mean ?? NaN);
+          const hr_minmax = (isValid(hr_min) && isValid(hr_max)) ? (hr_max - hr_min) : NaN;
+          const acc_mean = toNumber(r.acc_mean ?? NaN);
+          const acc_std = toNumber(r.acc_std ?? NaN);
+
+          // environmental
+          const humidity_mean = toNumber(r.humidity_mean ?? r.humiditiy_mean ?? NaN);
+          const co2_mean = toNumber(r.co2_mean ?? NaN);
+          const tvoc_mean = toNumber(r.tvoc_mean ?? NaN);
+          const temperature_mean = toNumber(r.temperature_mean ?? NaN);
+
+          const featureRow: Record<string, any> = {
+            pid: rowPid,
+            iso,
+            isoTime: tRaw.toISOString(), // 추가된 필드
+            // stress
+            stress: isValid(stress) ? stress : undefined,
+            // physiological
+            rmssd: isValid(rmssd) ? rmssd : undefined,
+            // call context
+            workload: isValid(workload) ? workload : undefined,
+            arousal: isValid(arousal) ? arousal : undefined,
+            valence: isValid(valence) ? valence : undefined,
+            tiredness: isValid(tiredness) ? tiredness : undefined,
+            surface_acting: isValid(surface_acting) ? surface_acting : undefined,
+            call_type_angry,
+            // stressor flags
+            stressor_lack_ability: lack_ability,
+            stressor_difficult_work: difficult_work,
+            stressor_eval_pressure: eval_pressure,
+            stressor_work_bad: work_bad,
+            stressor_hard_communication: hard_communication,
+            stressor_rude_customer: rude_customer,
+            stressor_time_pressure: time_pressure,
+            stressor_noise: noise,
+            stressor_peer_conflict: peer_conflict,
+            stressor_other,
+            // daily
+            daily_arousal: isValid(daily_arousal) ? daily_arousal : undefined,
+            daily_valence: isValid(daily_valence) ? daily_valence : undefined,
+            daily_tiredness: isValid(daily_tiredness) ? daily_tiredness : undefined,
+            daily_general_health: isValid(daily_general_health) ? daily_general_health : undefined,
+            daily_general_sleep: isValid(daily_general_sleep) ? daily_general_sleep : undefined,
+            // phys signals
+            steps: isValid(steps) ? steps : undefined,
+            skintemp: isValid(skinTemp) ? skinTemp : undefined,
+            skintemp_diff: isValid(skinTempDiff) ? skinTempDiff : undefined,
+            hr_min: isValid(hr_min) ? hr_min : undefined,
+            hr_max: isValid(hr_max) ? hr_max : undefined,
+            hr_mean: isValid(hr_mean) ? hr_mean : undefined,
+            hr_minmax: isValid(hr_minmax) ? hr_minmax : undefined,
+            acc_mean: isValid(acc_mean) ? acc_mean : undefined,
+            acc_std: isValid(acc_std) ? acc_std : undefined,
+            // environment
+            humidity_mean: isValid(humidity_mean) ? humidity_mean : undefined,
+            co2_mean: isValid(co2_mean) ? co2_mean : undefined,
+            tvoc_mean: isValid(tvoc_mean) ? tvoc_mean : undefined,
+            temperature_mean: isValid(temperature_mean) ? temperature_mean : undefined,
+            // keep original row for reference (optional)
+            _raw: r,
+          };
+
           if (!rawByDate.has(iso)) rawByDate.set(iso, []);
-          rawByDate.get(iso)!.push({ ...r, __epochMs: epochMs });
+          rawByDate.get(iso)!.push(featureRow);
 
-          const psych = Number(r.stress ?? r.daily_stress ?? r.psych ?? NaN);
-          const hr = Number(r.hr_mean ?? NaN);
-          const rmssd = Number(r.rmssd ?? NaN);
-          const acc = Number(r.acc_mean ?? NaN);
+          // existing aggregation inputs (keep same as before)
+          const psych = toNumber(r.stress ?? NaN);
+          const rmssd_forAgg = toNumber(r.rmssd ?? NaN);
 
           if (!byDay.has(iso)) {
-            byDay.set(iso, { psychVals: [], hrVals: [], rmssdVals: [], accVals: [] });
+            byDay.set(iso, { psychVals: [], rmssdVals: [] });
           }
           const entry = byDay.get(iso)!;
-          if (!Number.isNaN(psych)) entry.psychVals.push(psych);
-          if (!Number.isNaN(hr)) entry.hrVals.push(hr);
-          if (!Number.isNaN(rmssd)) entry.rmssdVals.push(rmssd);
-          if (!Number.isNaN(acc)) entry.accVals.push(acc);
+          if (isValid(psych)) entry.psychVals.push(psych);
+          if (isValid(rmssd_forAgg)) entry.rmssdVals.push(rmssd_forAgg);
         }
 
-        // compute per-day raw aggregates
-        const days = Array.from(byDay.entries()).map(([iso, arr]) => {
-          const mean = (a: number[]) => a.length ? a.reduce((s, v) => s + v, 0) / a.length : NaN;
-          return {
-            iso,
-            psychMean: mean(arr.psychVals),
-            hrMean: mean(arr.hrVals),
-            rmssdMean: mean(arr.rmssdVals),
-            accMean: mean(arr.accVals),
-          };
-        });
+        // 날짜별로 묶인 행들을 콘솔에 출력
+        // console.log('=== rows grouped by date ===');
+        // for (const [date, rowsForDate] of rawByDate.entries()) {
+        //   console.log(date, rowsForDate);
+        // }
+        // console.log('=== end grouped rows ===');
 
-        // compute min/max for normalization (skip NaN)
-        const getRange = (vals: number[]) => {
-          const filtered = vals.filter(v => !Number.isNaN(v));
-          if (!filtered.length) return { min: NaN, max: NaN };
-          return { min: Math.min(...filtered), max: Math.max(...filtered) };
-        };
+        // per-day aggregates
+        const days = Array.from(byDay.entries()).map(([iso, arr]) => ({
+          iso,
+          psychMean: mean(arr.psychVals),
+          rmssdMean: mean(arr.rmssdVals),
+          count: arr.psychVals.length
+        }));
 
-        const psychRange = getRange(days.map(d => d.psychMean));
-        const hrRange = getRange(days.map(d => d.hrMean));
+        // ranges
         const rmssdRange = getRange(days.map(d => d.rmssdMean));
-        const accRange = getRange(days.map(d => d.accMean));
 
-        const normalize = (v: number, min: number, max: number) => {
-          if (Number.isNaN(v) || Number.isNaN(min) || Number.isNaN(max) || max === min) return NaN;
-          return (v - min) / (max - min);
-        };
-
-        const mapOut = new Map<string, DailyStress>();
+        const out = new Map<string, DailyStress>();
         for (const d of days) {
-          // psych normalized 0..1
-          const psychRaw = Number.isNaN(d.psychMean) ? NaN : normalize(d.psychMean, psychRange.min, psychRange.max);
+          const psychRaw = isValid(d.psychMean) ? d.psychMean : NaN;
 
-          // phys: combine normalized hr (higher = more stress), inverse rmssd (lower rmssd -> more stress),
-          // and acc (higher = more movement/stress). We average available normalized components.
           const components: number[] = [];
-          const nh = Number.isNaN(d.hrMean) ? NaN : normalize(d.hrMean, hrRange.min, hrRange.max);
-          if (!Number.isNaN(nh)) components.push(nh);
-          const nrmssd = Number.isNaN(d.rmssdMean) ? NaN : normalize(d.rmssdMean, rmssdRange.min, rmssdRange.max);
-          if (!Number.isNaN(nrmssd)) components.push(1 - nrmssd); // inverse: smaller rmssd -> larger stress => 1 - norm
-          const nacc = Number.isNaN(d.accMean) ? NaN : normalize(d.accMean, accRange.min, accRange.max);
-          if (!Number.isNaN(nacc)) components.push(nacc);
-
+          const nrmssd = isValid(d.rmssdMean) ? normalize(d.rmssdMean, rmssdRange.min, rmssdRange.max) : NaN;
+          if (isValid(nrmssd)) components.push(1 - nrmssd); // inverse
           const physRaw = components.length ? components.reduce((s, v) => s + v, 0) / components.length : NaN;
 
-          // map raw(0..1) -> level 0..3
-          const rawToLevel = (x: number) => {
-            if (Number.isNaN(x)) return 0;
-            return Math.max(0, Math.min(3, Math.round(x * 3)));
-          };
+          const psychLevel = isValid(psychRaw) ? Math.round(psychRaw) : 0;
+          const physLevel = isValid(physRaw) ? rawToLevel(physRaw) : 0;
 
-          const psychLevel = Number.isNaN(psychRaw) ? 0 : rawToLevel(psychRaw);
-          const physLevel = Number.isNaN(physRaw) ? 0 : rawToLevel(physRaw);
+          const psychPresent = isValid(d.psychMean);
+          const physPresent = !Number.isNaN(d.rmssdMean);
 
-          mapOut.set(d.iso, {
+          out.set(d.iso, {
             psych: psychLevel,
             phys: physLevel,
-            psychRaw: Number.isNaN(psychRaw) ? undefined : psychRaw,
-            physRaw: Number.isNaN(physRaw) ? undefined : physRaw,
-            count:
-              (Number.isNaN(d.psychMean) ? 0 : 1) +
-              (Number.isNaN(d.hrMean) && Number.isNaN(d.rmssdMean) && Number.isNaN(d.accMean) ? 0 : 1),
+            psychRaw: isValid(psychRaw) ? psychRaw : undefined,
+            physRaw: isValid(physRaw) ? physRaw : undefined,
+            count: d.count,
           });
         }
 
+        
+
         if (mounted) {
-          setDailyMap(mapOut);
-          setRowsByDate(rawByDate);
+          setDailyMap(out);
+          setRowsByDate(rawByDate); // now returns feature rows per date
           setLoading(false);
         }
       } catch (err: any) {
@@ -165,7 +263,7 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
 
     load();
     return () => { mounted = false; };
-  }, [csvUrl, pid]); // pid 포함
+  }, [csvUrl, pid]);
 
   const getForDate = (isoDate: string) => dailyMap.get(isoDate);
   const getRowsForDate = (isoDate: string) => rowsByDate.get(isoDate) ?? [];
