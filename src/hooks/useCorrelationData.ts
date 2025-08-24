@@ -79,7 +79,7 @@ export default function useCorrelationData(csvUrl = "/data/correlation.csv", pid
         const parsedRows: CorRow[] = (parsed.data as Record<string, any>[]).map((r) => ({
           pid: String(r.pid ?? ""),
           feature: String(r.feature ?? ""),
-          category: String(r.category ?? "").trim() || "uncategorized",
+          category: r.feature.startsWith("daily_") ? "daily_context" : (String(r.category ?? "").trim() || "uncategorized"),
           stress: typeof r.stress === "number" ? r.stress : (r.stress === "" || r.stress == null ? undefined : Number(r.stress)),
           rmssd: typeof r.rmssd === "number" ? r.rmssd : (r.rmssd === "" || r.rmssd == null ? undefined : Number(r.rmssd)),
         }));
@@ -110,8 +110,8 @@ export default function useCorrelationData(csvUrl = "/data/correlation.csv", pid
           // Use category column directly: accept only 'stressor', 'env' (or 'environment'), 'context'
           let topType: TreemapCategory = "other";
           if (cat === "stressor") topType = "stressor";
+          else if (cat === "daily_context") topType = "daily_context";
           else if (cat === "context") topType = "context";
-          else if (r.feature.startsWith("daily_")) topType = "daily_context";
           else if (cat === "env" || cat === "environment") topType = "env";
 
           if (r.stress !== undefined && r.stress !== null && !Number.isNaN(Number(r.stress))) {

@@ -1,6 +1,5 @@
 'use client';
 
-import React, { useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import type { ApexOptions } from 'apexcharts';
 import { NAMES, STRESSORS, ENV, CONTEXT, CONTENT, DAILY_CONTEXT } from '@/data/stressWhy';
@@ -45,14 +44,13 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
     return result
   };
 
-  const psycho_sum = ['stressor', 'env', 'context', 'daily_context'].map(v => groupedByType[v as TreemapCategory]['psychological'][0].data.reduce((acc: number, curr: TreemapDatum) => acc + curr.y, 0))
-  const physio_sum = ['stressor', 'env', 'context', 'daily_context'].map(v => groupedByType[v as TreemapCategory]['physiological'][0].data.reduce((acc: number, curr: TreemapDatum) => acc + curr.y, 0))
+  const psycho_sum: number[] = ['stressor', 'env', 'context', 'daily_context'].map(v => groupedByType[v as TreemapCategory]['psychological'][0].data.reduce((acc: number, curr: TreemapDatum) => acc + curr.y, 0))
+  const physio_sum: number[] = ['stressor', 'env', 'context', 'daily_context'].map(v => groupedByType[v as TreemapCategory]['physiological'][0].data.reduce((acc: number, curr: TreemapDatum) => acc + curr.y, 0))
 
-  const options = (color: string, topType: TreemapCategory, type: 'psychological' | 'physiological'): ApexOptions => {
-    const series = getSeries(topType, type)
-    const fillType = series[0].data.map(({ raw }) => raw > 0 ? 'solid' : 'pattern')
-
-    console.log(fillType)
+  const options = (color: string): ApexOptions => {
+    // const series = getSeries(topType, type)
+    // const fillType = series[0].data.map(({ raw }) => raw > 0 ? 'solid' : 'pattern')
+    // console.log(fillType)
 
     return {
       legend: { show: true },
@@ -65,6 +63,13 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
         padding: { top: -20, bottom: 0, left: 0, right: 0 },
       },
       colors: [color],
+      tooltip: {
+        y: {
+          formatter: function (value) {
+            return value.toFixed(2) + '점'
+          }
+        }
+      },
       fill: {
         // type: fillType,
         pattern: {
@@ -86,7 +91,7 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
           <div className="flex flex-col" key={item.NAME}>
             <div className="flex flex-row gap-4 justify-start">
               <div className="h-full my-auto font-bold w-[94px] text-center">{item.NAME}</div>
-              <ReactApexChart options={options(item.COLOR, NAMES[psy_idx], 'psychological')} series={getSeries(NAMES[psy_idx], 'psychological') as any} type="treemap" width={490 * psycho_sum[psy_idx] / Math.max(...psycho_sum)} height={200} />
+              <ReactApexChart options={options(item.COLOR)} series={getSeries(NAMES[psy_idx], 'psychological')} type="treemap" width={490 * psycho_sum[psy_idx] / Math.max(...psycho_sum)} height={200} />
             </div>
           </div>
         ))}
@@ -98,7 +103,7 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
           <div className="flex flex-col" key={item.NAME}>
             <div className="flex flex-row gap-4 justify-start">
               <div className="h-full my-auto font-bold w-[94px] text-center">{item.NAME}</div>
-              <ReactApexChart options={options(item.COLOR, NAMES[phy_idx], 'physiological')} series={getSeries(NAMES[phy_idx], 'physiological') as any} type="treemap" width={490 * physio_sum[phy_idx] / Math.max(...physio_sum)} height={200} />
+              <ReactApexChart options={options(item.COLOR)} series={getSeries(NAMES[phy_idx], 'physiological')} type="treemap" width={490 * physio_sum[phy_idx] / Math.max(...physio_sum)} height={200} />
             </div>
           </div>
         ))}
