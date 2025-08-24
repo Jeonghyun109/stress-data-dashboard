@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import useStressData from '@/hooks/useStressData';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import useStressDiffData from '@/hooks/useStressDiffData';
 
 interface CalendarProps {
   pid: string | undefined;
@@ -65,7 +65,7 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
   const [showPsych, setShowPsych] = useState<boolean>(true);
   const [showPhys, setShowPhys] = useState<boolean>(false);
 
-  const { loading, dailyMap, getForDate } = useStressData('/data/feature_full.csv', pid);
+  const { loading, dailyMap, getForDate } = useStressDiffData('/data/diff_full.csv', pid);
 
   useEffect(() => {
     const first = new Date(year, month, 1).getDay();

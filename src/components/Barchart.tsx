@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import type { ApexOptions, ApexAxisChartSeries } from 'apexcharts';
+import type { ApexOptions } from 'apexcharts';
 import React from 'react';
 import useEffectData from '@/hooks/useEffectData';
 import { CONTENT } from '@/data/stressEffect';
