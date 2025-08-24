@@ -206,7 +206,7 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
           <React.Fragment key={`week-${w_idx}`}>
           {week.map((date, idx) => {
             let base =
-              'w-[40px] h-[40px] first:rounded-tl-xl nth-7:rounded-tr-xl nth-36:rounded-bl-xl last:rounded-br-xl text-center leading-[40px] mx-auto hover:font-bold';
+              'w-[40px] h-[40px] first:rounded-tl-xl nth-7:rounded-tr-xl nth-36:rounded-bl-xl last:rounded-br-xl text-center leading-[40px] mx-auto';
             const ds = getDateStyle(date);
             return (
               <button 
