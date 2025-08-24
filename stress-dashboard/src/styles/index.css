@@ -1,0 +1,85 @@
+// filepath: /home/jeonghyun/Desktop/stress-data-dashboard/src/components/DashboardLayout.tsx
+import React from 'react';
+
+const DashboardLayout: React.FC = () => {
+    return (
+        <div className="w-full h-full bg-white overflow-hidden">
+            {/* Header Section */}
+            <header className="flex justify-between items-center p-4 bg-gray-100">
+                <h1 className="text-3xl font-semibold font-['Inter']">Stress Data Dashboard</h1>
+                <nav>
+                    {/* Navigation items can go here */}
+                </nav>
+            </header>
+
+            {/* Main Content Area */}
+            <main className="flex flex-col p-6">
+                {/* Section 1: Mode Selection */}
+                <section className="mb-8">
+                    <h2 className="text-2xl font-semibold font-['Inter']">모드 선택</h2>
+                    <div className="flex items-center gap-4 mt-4">
+                        <div className="w-28 h-14 p-4 bg-gray-100 rounded-md flex justify-center items-center">
+                            <span className="text-neutral-400 text-xl font-normal font-['Inter']">상태 모드</span>
+                        </div>
+                        <div className="w-px h-8 bg-gray-300" />
+                        <div className="w-28 h-14 p-4 bg-sky-200 rounded-md flex justify-center items-center">
+                            <span className="text-neutral-900 text-xl font-semibold font-['Inter']">변화 모드</span>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Section 2: Stress Change Calendar */}
+                <section className="mb-8">
+                    <h2 className="text-2xl font-semibold font-['Inter']">일간 스트레스 변화 캘린더</h2>
+                    <div className="mt-4">
+                        <p className="text-neutral-900 text-base font-normal font-['Inter']">
+                            각 날짜의 평균 스트레스 저감률을 색상으로 시각화한 캘린더입니다. 날짜를 클릭하거나 드래그하여 특정 기간 동안의 스트레스 저감률 데이터를 탐색할 수 있으며, 월간 스트레스 저감 경향을 한눈에 확인할 수 있습니다.
+                        </p>
+                        <p className="text-neutral-900 text-base font-normal font-['Inter']">
+                            색상은 스트레스의 저감 정도를 나타내며, 부정적인 변화 (스트레스 증가)는 주황색 계열로, 긍정적인 변화 (스트레스 저감)는 초록색 계열로 표시됩니다.
+                        </p>
+                    </div>
+                    {/* Placeholder for Calendar Component */}
+                    <div className="w-full h-72 bg-gray-200 mt-4 rounded-md"></div>
+                </section>
+
+                {/* Section 3: Stress Reduction Activities */}
+                <section className="mb-8">
+                    <h2 className="text-2xl font-semibold font-['Inter']">스트레스 완화 활동</h2>
+                    <div className="mt-4">
+                        <p className="text-neutral-900 text-base font-normal font-['Inter']">
+                            지난 한 달 동안, 당신은 왜 스트레스를 받았나요?
+                        </p>
+                        <div className="mt-4">
+                            <h3 className="text-xl font-semibold font-['Inter']">나의 인지 스트레스 저감 활동</h3>
+                            <p className="text-neutral-900 text-base font-normal font-['Inter']">
+                                당신의 인지 스트레스를 가장 많이 저감시킨 스트레스 완화 활동은 <strong>호흡하기(76.3%)</strong>입니다.
+                            </p>
+                            {/* Placeholder for Activities Chart */}
+                            <div className="w-full h-96 bg-gray-300 mt-4 rounded-md"></div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Section 4: Stress Type Information */}
+                <section className="mb-8">
+                    <h2 className="text-2xl font-semibold font-['Inter']">스트레스 유형 안내</h2>
+                    <div className="mt-4">
+                        <p className="text-neutral-900 text-base font-normal font-['Inter']">
+                            내 몸이 실제로 반응한 생리적인 긴장 수준, 즉 내 몸이 받은 부담을 나타냅니다.
+                        </p>
+                        {/* Placeholder for Stress Type Details */}
+                        <div className="w-full h-72 bg-gray-200 mt-4 rounded-md"></div>
+                    </div>
+                </section>
+            </main>
+
+            {/* Footer Section */}
+            <footer className="p-4 bg-gray-100 text-center">
+                <p className="text-neutral-600 text-sm font-['Inter']">© 2025 Stress Data Dashboard. All rights reserved.</p>
+            </footer>
+        </div>
+    );
+};
+
+export default DashboardLayout;
