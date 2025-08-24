@@ -98,20 +98,20 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
 
   // Timeline과 동일한 클래스 매핑 (0..4)
   const STRESS_CLASSES = {
-    'Psychological': ['bg-white', 'bg-violet-50', 'bg-violet-100', 'bg-violet-200', 'bg-violet-400'],
-    'Physiological': ['bg-white', 'bg-yellow-100', 'bg-yellow-200', 'bg-yellow-300', 'bg-yellow-500'],
+    'Psychological': ['bg-violet-50', 'bg-violet-100', 'bg-violet-200', 'bg-violet-300', 'bg-violet-400'],
+    'Physiological': ['bg-yellow-100', 'bg-yellow-200', 'bg-yellow-300', 'bg-yellow-400', 'bg-yellow-500'],
   } as const;
 
   // 동일 매핑의 대략적인 HEX 값(그라디언트 생성용)
   const STRESS_HEX = {
-    'Psychological': ['#ffffff', '#F5F3FF', '#EDE9FE', '#C4B5FD', '#A78BFA'],
-    'Physiological': ['#ffffff', '#FFFBEB', '#FEF3C7', '#FDE68A', '#F59E0B'],
+    'Psychological': ['#f5f3ff', '#ede9fe', '#ddd6ff', '#c4b4ff', '#a684ff'],
+    'Physiological': ['#fef9c2', '#fff085', '#ffdf20', '#fcc800', '#efb100'],
   } as const;
 
   // 기존 levelToHex 제거/대체 — 클래스 또는 hex 반환용 헬퍼
   const levelToClass = (type: Stress, lvl: number) => {
-    if (lvl < 0) return '';
-    return STRESS_CLASSES[type][lvl] ?? '';
+    if (lvl < 0) return 'bg-white';
+    return STRESS_CLASSES[type][lvl] ?? 'bg-white';
   };
   const levelToHex = (type: Stress, lvl: number) => {
     if (lvl < 0) return '#e5e7eb';
