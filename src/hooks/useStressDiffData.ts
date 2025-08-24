@@ -29,13 +29,9 @@ const getRange = (vals: number[]) => {
   if (!clean.length) return { min: NaN, max: NaN };
   return { min: Math.min(...clean), max: Math.max(...clean) };
 };
-const normalize = (v: number, min: number, max: number) => {
-  if (!isValid(v) || !isValid(min) || !isValid(max) || max === min) return NaN;
-  return v / (max - min);
-};
 const rawToLevel = (x: number) => {
   if (!isValid(x)) return 0;
-  return Math.max(0, Math.min(4, Math.round(x * 4)));
+  return Math.max(-4, Math.min(4, Math.round(x * 4)));
 };
 /* --- end helpers --- */
 
@@ -70,7 +66,6 @@ export default function useStressDiffData(csvUrl = '/data/diff_full.csv', pid?: 
             return rowPid === pid;
           })
           : rows;
-        // console.log(filteredRows);
 
         const byDay = new Map<string, {
           psychVals: number[];
@@ -110,8 +105,6 @@ export default function useStressDiffData(csvUrl = '/data/diff_full.csv', pid?: 
           if (isValid(psych)) entry.psychVals.push(psych);
           if (isValid(rmssd_forAgg)) entry.rmssdVals.push(rmssd_forAgg);
         }
-
-        console.log('byDay', byDay)
 
         // per-day aggregates
         const days = Array.from(byDay.entries()).map(([iso, arr]) => ({
@@ -162,8 +155,6 @@ export default function useStressDiffData(csvUrl = '/data/diff_full.csv', pid?: 
     load();
     return () => { mounted = false; };
   }, [csvUrl, pid]);
-
-  console.log(dailyMap)
 
   const getForDate = (isoDate: string) => dailyMap.get(isoDate);
   const getRowsForDate = (isoDate: string) => rowsByDate.get(isoDate) ?? [];

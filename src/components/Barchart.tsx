@@ -28,7 +28,7 @@ const Barchart: React.FC<{ pid?: string | number }> = ({ pid }) => {
       enabled: true,
       formatter: (val: number) => `${Number(val).toFixed(1)}%`,
       offsetY: -20,
-      style: { fontSize: '12px', colors: [color] },
+      style: { fontSize: '12px', colors: [({ seriesIndex, series, dataPointIndex }) => series[seriesIndex][dataPointIndex] < 0 ? '#f87171' : color] },
     },
     xaxis: {
       categories: categoriesForChart,
@@ -45,18 +45,21 @@ const Barchart: React.FC<{ pid?: string | number }> = ({ pid }) => {
       labels: { show: false, formatter: (val: number) => `${Number(val).toFixed(1)}%` },
     },
     grid: { padding: { top: 0, bottom: 0, left: 0, right: -10 } },
-    colors: [color],
+    colors: [({ value }: { value: number }) => value < 0 ? '#f87171' : color],
   });
 
   const perceivedApex: ApexAxisChartSeries = [{ name: "", data: perceivedSeriesSorted }];
   const physioApex: ApexAxisChartSeries = [{ name: "", data: physioSeriesSorted }];
 
+  console.log('perceived', perceivedSeriesSorted)
+  console.log('physio', physioSeriesSorted)
+
   return (
-    <div className="w-full my-4 flex gap-20 justify-between">
+    perceivedSeriesSorted.length > 0 && physioSeriesSorted.length > 0 && <div className="w-full my-4 flex gap-20 justify-between">
       <div className="w-1/2">
         <div className="font-semibold text-2xl">{CONTENT.BODY_1.TITLE}</div>
         <ReactApexChart
-          options={baseOptions('#6B21A8', categoriesPerceivedSorted)}
+          options={baseOptions('#14b8a6', categoriesPerceivedSorted)}
           series={perceivedApex}
           type="bar"
           height={320}
@@ -66,7 +69,7 @@ const Barchart: React.FC<{ pid?: string | number }> = ({ pid }) => {
       <div className="w-1/2">
         <div className="font-semibold text-2xl">{CONTENT.BODY_2.TITLE}</div>
         <ReactApexChart
-          options={baseOptions('#D97706', categoriesPhysioSorted)}
+          options={baseOptions('#a3e635', categoriesPhysioSorted)}
           series={physioApex}
           type="bar"
           height={320}

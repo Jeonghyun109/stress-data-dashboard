@@ -43,8 +43,8 @@ const Header: React.FC<{
   <div className="mb-6 flex flex-col items-center justify-between">
     <h2 className="text-2xl font-bold text-gray-800">일간 스트레스 변화 캘린더</h2>
     <div className="w-full flex flex-col items-end gap-2">
-      <ToggleSwitch active={showPsych} onToggle={() => setShowPsych(!showPsych)} color="#A78BFA" label="인지 스트레스 점수" />
-      <ToggleSwitch active={showPhys} onToggle={() => setShowPhys(!showPhys)} color="#F59E0B" label="신체 스트레스 점수" />
+      <ToggleSwitch active={showPsych} onToggle={() => setShowPsych(!showPsych)} color="#2dd4bf" label="인지 스트레스 점수" />
+      <ToggleSwitch active={showPhys} onToggle={() => setShowPhys(!showPhys)} color="#a3e635" label="신체 스트레스 점수" />
     </div>
   </div>
 );
@@ -99,34 +99,36 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
 
   // Timeline과 동일한 클래스 매핑 (0..4)
   const STRESS_CLASSES = {
-    'Psychological': ['bg-violet-50', 'bg-violet-100', 'bg-violet-200', 'bg-violet-300', 'bg-violet-400'],
-    'Physiological': ['bg-yellow-100', 'bg-yellow-200', 'bg-yellow-300', 'bg-yellow-400', 'bg-yellow-500'],
+    'Psychological': ['bg-teal-200', 'bg-teal-300', 'bg-teal-400', 'bg-teal-500', 'bg-teal-600'],
+    'Physiological': ['bg-lime-200', 'bg-lime-300', 'bg-lime-400', 'bg-lime-500', 'bg-lime-600'],
   } as const;
 
   // 동일 매핑의 대략적인 HEX 값(그라디언트 생성용)
   const STRESS_HEX = {
-    'Psychological': ['#f5f3ff', '#ede9fe', '#ddd6ff', '#c4b4ff', '#a684ff'],
-    'Physiological': ['#fef9c2', '#fff085', '#ffdf20', '#fcc800', '#efb100'],
+    'Psychological': ['#99f6e4', '#5eead4', '#2dd4bf', '#14b8a6', '#0d9488'],
+    'Physiological': ['#d9f99d', '#bef264', '#a3e635', '#84cc16', '#65a30d'],
   } as const;
 
   // 기존 levelToHex 제거/대체 — 클래스 또는 hex 반환용 헬퍼
   const levelToClass = (type: Stress, lvl: number) => {
-    if (lvl < 0) return 'bg-white';
-    return STRESS_CLASSES[type][lvl] ?? 'bg-white';
+    if (Number.isNaN(lvl)) return 'bg-white'
+    if (lvl > 0) return 'bg-red-200';
+    return STRESS_CLASSES[type][-lvl] ?? 'bg-white';
   };
   const levelToHex = (type: Stress, lvl: number) => {
-    if (lvl < 0) return '#e5e7eb';
-    return STRESS_HEX[type][lvl] ?? '#e5e7eb';
+    if (Number.isNaN(lvl)) return '#ffffff';
+    if (lvl > 0) return '#fecaca';
+    return STRESS_HEX[type][-lvl] ?? '#ffffff';
   };
 
   const getDateStyle = (date: Date) => {
+    if (date.getMonth() !== month) return { className: 'text-gray-400', style: { backgroundColor: '#F3F4F6' } };
     const fixedDate = new Date(date)
     fixedDate.setDate(fixedDate.getDate() + 1)
-    if (fixedDate.getMonth() !== month) return { className: 'text-gray-400', style: { backgroundColor: '#F3F4F6' } };
 
     // const key = date.toISOString().slice(0, 10);
     const key = fixedDate.toISOString().slice(0, 10);
-    const data = getForDate(key) ?? { psych: -1, phys: -1 };
+    const data = getForDate(key) ?? { psych: NaN, phys: NaN };
     const psych = data.psych;
     const phys = data.phys;
 
