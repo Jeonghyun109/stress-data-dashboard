@@ -53,9 +53,6 @@ const Barchart: React.FC<{ pid?: string | number }> = ({ pid }) => {
   const perceivedApex: ApexAxisChartSeries = [{ name: "", data: perceivedSeriesSorted }];
   const physioApex: ApexAxisChartSeries = [{ name: "", data: physioSeriesSorted }];
 
-  console.log('perceived', perceivedSeriesSorted)
-  console.log('physio', physioSeriesSorted)
-
   return (
     perceivedSeriesSorted.length > 0 && physioSeriesSorted.length > 0 && <div className="w-full my-4 flex gap-20 justify-between">
       <div className="w-1/2">

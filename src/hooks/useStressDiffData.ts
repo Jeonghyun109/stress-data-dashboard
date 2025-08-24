@@ -139,6 +139,8 @@ export default function useStressDiffData(csvUrl = '/data/diff_full.csv', pid?: 
           });
         }
 
+        console.log('rawByDate', rawByDate)
+
         if (mounted) {
           setDailyMap(out);
           setRowsByDate(rawByDate); // now returns feature rows per date

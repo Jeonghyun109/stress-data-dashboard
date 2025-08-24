@@ -132,6 +132,9 @@ const TimelineChart: React.FC<{
   const [tooltip, setTooltip] = React.useState<null | { leftPercent: number; bucketIdx: number }>(null);
   const [flag, setFlag] = React.useState<null | { leftPercent: number; bucketIdx: number }>(null);
 
+  console.log(psychDiff)
+  console.log(physDiff)
+
   const openTooltip = (idx: number) => {
     const leftPercent = (idx + 0.5) * colPct;
     setTooltip({ leftPercent, bucketIdx: idx });
@@ -431,12 +434,13 @@ const DiffTimeline: React.FC<TimelineProps> = ({
   const { loading, getForDate, getRowsForDate, getInterventionsForDate } = useStressData('/data/feature_full.csv', pid);
   const rows = getRowsForDate(fixedDate.toISOString().slice(0, 10));
   const interventions = getInterventionsForDate(fixedDate.toISOString().slice(0, 10));
-  console.log(rows)
 
   const { getRowsForDate: getDiffRowsForDate } = useStressDiffData('/data/diff_full.csv', pid);
   const diff_rows = getDiffRowsForDate(fixedDate.toISOString().slice(0, 10));
   const psych_diff = diff_rows.map((row) => row.perceived_diff);
-  const phys_diff = diff_rows.map((row) => row.physical_diff);
+  const phys_diff = diff_rows.map((row) => row.physio_diff);
+
+  console.log('diff_rows', diff_rows)
 
   // prepare buckets
   const buckets = React.useMemo(() => {
@@ -452,8 +456,8 @@ const DiffTimeline: React.FC<TimelineProps> = ({
 
     if (!rows || rows.length === 0) {
       // create empty buckets across working-day heuristic
-      const dayStart = new Date(fixedDate.getFullYear(), fixedDate.getMonth(), fixedDate.getDate(), 8, 0, 0).getTime();
-      const dayEnd = new Date(fixedDate.getFullYear(), fixedDate.getMonth(), fixedDate.getDate(), 18, 0, 0).getTime();
+      const dayStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 8, 0, 0).getTime();
+      const dayEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 18, 0, 0).getTime();
       const span = Math.max(1, dayEnd - dayStart);
       for (let i = 0; i < SLOTS_COUNT; i++) {
         const s = Math.floor(dayStart + (i * span) / SLOTS_COUNT);
