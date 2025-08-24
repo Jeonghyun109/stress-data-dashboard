@@ -126,3 +126,66 @@ export const DAILY_CONTEXT = {
   daily_general_health: "출근 시점의 건강 상태",
   daily_general_sleep_quality: "출근 전 수면의 질",
 }
+
+export const labelMap = (featureName: string) => {
+  switch (featureName) {
+    case 'stressor_lack_ability':
+      return '내 능력이 부족하다고 생각됨'
+    case 'stressor_difficult_work':
+      return '업무를 숙지하기 어려움'
+    case 'stressor_eval_pressure':
+      return '성과 평가가 부담됨'
+    case 'stressor_work_bad':
+      return '업무방식이 불만스러움'
+    case 'stressor_hard_communication':
+      return '고객과 소통이 안 됨'
+    case 'stressor_rude_customer':
+      return '예의 없는 고객'
+    case 'stressor_time_pressure':
+      return '시간적인 압박을 느낌'
+    case 'stressor_noise':
+      return '주위 사람들의 소리가 신경 쓰임'
+    case 'stressor_peer_conflict':
+      return '동료와 관련된 갈등이나 문제'
+    case 'stressor_other':
+      return '기타'
+    case 'humidity_mean':
+      return '습도'
+    case 'co2_mean':
+      return '이산화탄소 농도'
+    case 'tvoc_mean':
+      return '공기질'
+    case 'temperature_mean':
+      return '온도'
+    case 'steps':
+      return '지난 한 시간 동안 걸은 걸음수'
+    case 'skintemp':
+      return '피부 온도'
+    case 'workload':
+      return '업무량'
+    case 'arousal':
+      return '감정의 강도'
+    case 'valence':
+      return '감정의 긍정도'
+    case 'tiredness':
+      return '피로도'
+    case 'surface_acting':
+      return '감정을 숨기기 위해 노력한 정도'
+    case 'call_type_angry':
+      return '불만 콜 여부'
+    case 'daily_stress':
+      return '출근 시점의 스트레스'
+    case 'daily_valence':
+      return '출근 시점의 감정 긍정도'
+    case 'daily_arousal':
+      return '출근 시점의 감정 강도'
+    case 'daily_tiredness':
+      return '출근 시점의 피로도'
+    case 'daily_general_health':
+      return '출근 시점의 건강 상태'
+    case 'daily_general_sleep_quality':
+      return '출근 전 수면의 질'
+    default:
+      return featureName
+  }
+}

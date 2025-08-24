@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import type { ApexOptions } from 'apexcharts';
-import { NAMES, STRESSORS, ENV, CONTEXT, CONTENT, DAILY_CONTEXT } from '@/data/stressWhy';
+import { NAMES, CONTENT, labelMap } from '@/data/stressWhy';
 import useCorrelationData, { TreemapCategory, TreemapGroup } from '@/hooks/useCorrelationData';
 import TreeMapInfo from './report/TreeMapReport';
 
@@ -25,19 +25,11 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
   const getSeries = (topType: TreemapCategory, type: 'psychological' | 'physiological'): ApexAxisChartSeries => {
     const raw = groupedByType[topType]?.[type] ?? [];
     // clone groups and map each datum.x using appropriate label map
-    const labelMap = (() => {
-      if (topType === 'stressor') return STRESSORS;
-      if (topType === 'env') return ENV;
-      if (topType === 'context') return CONTEXT;
-      if (topType === 'daily_context') return DAILY_CONTEXT;
-      return undefined;
-    })();
-
     const result = raw.map((group: TreemapGroup) => ({
       name: group.name,
       data: group.data.map(datum => {
-        const mapped = labelMap && (labelMap as any)[datum.x] ? (labelMap as any)[datum.x] : datum.x;
-        return { x: mapped, y: datum.y, raw: datum.raw, fill: { type: 'image', opacity: 0, pattern: { style: 'verticalLines' } } };
+        const mapped = labelMap(datum.x);
+        return { x: mapped, y: datum.raw * 100, raw: datum.raw, fill: { type: 'image', opacity: 0, pattern: { style: 'verticalLines' } } };
       })
     }))
 
