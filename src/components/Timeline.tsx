@@ -1,5 +1,6 @@
 import React from 'react';
 import useStressData from '@/hooks/useStressData';
+import { stressor_list, STRESSORS } from '@/data/stressWhy';
 
 // Props reuse shared StressDataPoint type from data module
 interface TimelineProps {
@@ -134,12 +135,9 @@ const TimelineChart: React.FC<{
   const closeTooltip = () => setTooltip(null);
 
   React.useEffect(() => {
-    const onScroll = () => closeTooltip();
     const onClick = () => closeTooltip();
-    window.addEventListener('scroll', onScroll);
     window.addEventListener('click', onClick);
     return () => {
-      window.removeEventListener('scroll', onScroll);
       window.removeEventListener('click', onClick);
     };
   }, []);
@@ -147,7 +145,8 @@ const TimelineChart: React.FC<{
   const colTemplate = `repeat(${buckets.length}, minmax(0, 1fr))`;
   
   return (
-    <div className="relative w-full" onClick={(e) => { e.stopPropagation(); }}>
+    <>
+    <div className="relative w-full" onClick={(e) => { e.stopPropagation();}}>
       {/* Row labels */}
       <div className="absolute left-0 top-0 bottom-8 flex flex-col justify-between w-28 pr-4 my-12">
         <div className="font-medium text-gray-700 text-center leading-tight">
@@ -222,7 +221,7 @@ const TimelineChart: React.FC<{
                                position: 'absolute',
                                left: `calc(${leftPctI}% )`,
                                top: '-5%',
-                               bottom: '-10%',
+                               bottom: '-5%',
                                borderLeft: '2px dashed #7ccf00',
                                borderRight: '2px dashed #7ccf00',
                                transform: 'translateX(-1px)', // roughly center the 2px line
@@ -316,54 +315,63 @@ const TimelineChart: React.FC<{
             </div>
           </div>
 
-          {/* Tooltip */}
-          {tooltip && (() => {
-            const b = buckets[tooltip.bucketIdx];
-            const summary = b?.summary ?? {};
-
-            console.log(summary)
-            return (
-              <div
-                className="absolute z-30 bg-white border rounded shadow-lg p-2 text-sm"
-                style={{ left: `${tooltip.leftPercent}%`, top: '70%', transform: 'translate(-50%, 8px)', minWidth: 220 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="text-center font-bold mb-1">{formatTime(b.startMs)}~{formatTime(b.endMs)}에 수집된 데이터</div>
-                <div className="text-sm text-gray-700 space-y-1">
-                  {/* Exclude psych/phys from list; show other aggregated features */}
-                  {/* <div>행 수: {b.rows.length}</div> */}
-                  <div className="font-bold">스트레스 데이터</div>
-                  {b.avgInternal !== undefined && <div>인지 스트레스 레벨: {b.avgInternal}</div>}
-                  {b.avgPhysical !== undefined && <div>신체 스트레스 레벨: {b.avgPhysical}</div>}
-                  <div className="h-[1px]" />
-
-                  {summary.stressor?.length > 0 && <div className="font-bold">스트레스 요인</div>}
-                  {summary.stressor?.length > 0 && <div>{summary.stressor.join(', ')}</div>}
-                  {summary.stressor?.length > 0 && <div className="h-[1px]" />}
-
-                  <div className="font-bold">환경 데이터</div>
-                  {summary.workload !== undefined && <div>업무량: {summary.workload.toFixed(2)}/5</div>}
-                  {summary.arousal !== undefined && <div>감정의 강도: {summary.arousal.toFixed(2)}/5</div>}
-                  {summary.valence !== undefined && <div>감정의 긍정도: {summary.valence.toFixed(2)}/5</div>}
-                  {summary.tiredness !== undefined && <div>피로도: {summary.tiredness.toFixed(2)}/5</div>}
-                  {summary.surface_acting !== undefined && <div>감정을 숨기려는 노력: {summary.surface_acting.toFixed(2)}/5</div>}
-                  <div>직전 콜 유형: {summary.call_type_angry ? '불만' : '일반'}</div>
-                  {/* <div>Stressor count (sum flags): {summary.stressor_sum ?? 0}</div> */}
-                  {summary.steps !== undefined && <div>평균 걸음수: {Math.round(summary.steps)}회</div>}
-                  {summary.skintemp !== undefined && <div>SkinTemp (avg): {summary.skintemp.toFixed(2)}</div>}
-                  {summary.hr_minmax !== undefined && <div>HR range (avg): {summary.hr_minmax.toFixed(2)}</div>}
-                  {summary.acc_mean !== undefined && <div>Acc mean: {summary.acc_mean.toFixed(3)}</div>}
-                  {summary.humidity_mean !== undefined && <div>습도: {summary.humidity_mean.toFixed(2)}%</div>}
-                  {summary.co2_mean !== undefined && <div>이산화탄소 농도: {summary.co2_mean.toFixed(1)}%</div>}
-                  {summary.tvoc_mean !== undefined && <div>공기질: {summary.tvoc_mean.toFixed(1)}ppm</div>}
-                  {summary.temperature_mean !== undefined && <div>실내 온도: {summary.temperature_mean.toFixed(2)}도</div>}
-                </div>
-              </div>
-            );
-          })()}
+          
         </div>
       </div>
     </div>
+    {/* Tooltip */}
+    {tooltip && (() => {
+      const b = buckets[tooltip.bucketIdx];
+      const summary = b?.summary ?? {};
+
+      return (
+        <div onClick={(e) => e.stopPropagation()}>
+          <div className="text-lg text-center font-bold mt-12 mb-6">{formatTime(b.startMs)}~{formatTime(b.endMs)}에 수집된 데이터</div>
+          <div className="text-gray-700 flex flex-row gap-12">
+            <div className="w-1/2">
+              <div className="font-bold">스트레스 데이터</div>
+              {b.avgInternal !== undefined && <div>인지 스트레스 레벨: {b.avgInternal} / 4</div>}
+              {b.avgPhysical !== undefined && <div>신체 스트레스 레벨: {b.avgPhysical} / 4</div>}
+              <div className="h-3" />
+
+              {summary.stressor?.length > 0 && <div className="font-bold">스트레스 요인</div>}
+              {summary.stressor?.length > 0 && <div className="h-auto">{summary.stressor.join(', ')}</div>}
+              {summary.stressor?.length > 0 && <div className="h-3" />}
+              
+              <div className="font-bold">아침 상황 데이터</div>
+              {summary.daily_arousal !== undefined && <div>감정의 강도: {summary.daily_arousal.toFixed(2)} / 5</div>}
+              {summary.daily_valence !== undefined && <div>감정의 긍정도: {summary.daily_valence.toFixed(2)} / 5</div>}
+              {summary.daily_tiredness !== undefined && <div>피로도: {summary.daily_tiredness.toFixed(2)} / 5</div>}
+              {summary.daily_general_health !== undefined && <div>전반적인 건강: {summary.daily_general_health.toFixed(2)} / 5</div>}
+              {summary.daily_general_sleep !== undefined && <div>수면의 질: {summary.daily_general_sleep.toFixed(2)} / 5</div>}
+            </div>
+            <div className="w-1/2">
+              <div className="font-bold">환경 데이터</div>
+              {summary.humidity_mean !== undefined && <div>습도: {summary.humidity_mean.toFixed(2)}%</div>}
+              {summary.co2_mean !== undefined && <div>이산화탄소 농도: {summary.co2_mean.toFixed(1)} ppm</div>}
+              {summary.tvoc_mean !== undefined && <div>공기질: {summary.tvoc_mean.toFixed(1)}ppm</div>}
+              {summary.temperature_mean !== undefined && <div>실내 온도: {summary.temperature_mean.toFixed(2)}도</div>}     
+              <div className="h-3" />
+
+              <div className="font-bold">상황 데이터</div>
+              {summary.workload !== undefined && <div>업무량: {summary.workload.toFixed(2)} / 5</div>}
+              {summary.arousal !== undefined && <div>감정의 강도: {summary.arousal.toFixed(2)} / 5</div>}
+              {summary.valence !== undefined && <div>감정의 긍정도: {summary.valence.toFixed(2)} / 5</div>}
+              {summary.tiredness !== undefined && <div>피로도: {summary.tiredness.toFixed(2)} / 5</div>}
+              {summary.surface_acting !== undefined && <div>감정을 숨기려는 노력: {summary.surface_acting.toFixed(2)} / 5</div>}
+              <div>직전 콜 유형: {summary.call_type_angry ? '불만' : '일반'}</div>
+              {/* <div>Stressor count (sum flags): {summary.stressor_sum ?? 0}</div> */}
+              {summary.steps !== undefined && <div>평균 걸음수: {Math.round(summary.steps)}회</div>}
+              {summary.skintemp !== undefined && <div>피부 온도: {summary.skintemp.toFixed(2)}도</div>}
+              {summary.hr_minmax !== undefined && <div>평균 심박: {summary.hr_mean.toFixed(2)} bpm</div>}
+              {summary.acc_mean !== undefined && <div>평균 가속도계: {summary.acc_mean.toFixed(3)} m/s²</div>}
+              <div className="h-3" />
+            </div>
+          </div>
+        </div>
+      );
+    })()}
+    </>
   );
 };
 
@@ -442,8 +450,6 @@ const Timeline: React.FC<TimelineProps> = ({
       }
     }
 
-    console.log(out);
-
     // compute ranges for physical normalization using only this date's rows
     const hrVals = rows.map(r => Number(r.hr_mean)).filter(v => !Number.isNaN(v));
     const rmssdVals = rows.map(r => Number(r.rmssd)).filter(v => !Number.isNaN(v));
@@ -470,12 +476,17 @@ const Timeline: React.FC<TimelineProps> = ({
         stressor: [] as string[],
         steps: [] as number[],
         skintemp: [] as number[],
-        hr_minmax: [] as number[],
+        hr_mean: [] as number[],
         acc_mean: [] as number[],
         humidity_mean: [] as number[],
         co2_mean: [] as number[],
         tvoc_mean: [] as number[],
         temperature_mean: [] as number[],
+        daily_arousal: [] as number[],
+        daily_valence: [] as number[],
+        daily_tiredness: [] as number[],
+        daily_general_health: [] as number[],
+        daily_general_sleep: [] as number[],
       };
 
       for (const r of b.rows) {
@@ -504,18 +515,22 @@ const Timeline: React.FC<TimelineProps> = ({
           if (r[f]) {
             summaryAcc.stressor_sum += 1; 
             summaryAcc.stressor.push(f);
-            console.log(f)
-            console.log(summaryAcc.stressor)
           }
         }
         pushIfNum('steps', r.steps);
         pushIfNum('skintemp', r.skintemp ?? r.skintemp_diff);
-        pushIfNum('hr_minmax', r.hr_minmax);
+        pushIfNum('hr_mean', r.hr_mean);
         pushIfNum('acc_mean', r.acc_mean);
         pushIfNum('humidity_mean', r.humidity_mean);
         pushIfNum('co2_mean', r.co2_mean);
         pushIfNum('tvoc_mean', r.tvoc_mean);
         pushIfNum('temperature_mean', r.temperature_mean);
+
+        pushIfNum('daily_arousal', r.daily_arousal);
+        pushIfNum('daily_valence', r.daily_valence);
+        pushIfNum('daily_tiredness', r.daily_tiredness);
+        pushIfNum('daily_general_health', r.daily_general_health);
+        pushIfNum('daily_general_sleep', r.daily_general_sleep);
       }
 
       const avgInternal = internalVals.length ? mean(internalVals) : NaN;
@@ -528,8 +543,23 @@ const Timeline: React.FC<TimelineProps> = ({
       const summary: Record<string, any> = {};
       for (const k of Object.keys(summaryAcc)) {
         const v = (summaryAcc as any)[k];
-        if (Array.isArray(v) && k !== "stressor") summary[k] = v.length ? mean(v) : undefined;
-        else summary[k] = v;
+        if (k === 'stressor') {
+          // map stressor keys to human-readable (Korean) labels using STRESSORS / stressor_list
+          if (Array.isArray(v) && v.length) {
+            const uniqueCodes = Array.from(new Set(v)).filter(Boolean) as string[];
+            const mapped = uniqueCodes.map(code => {
+              // prefer STRESSORS mapping, then stressor_list, fallback to humanized key
+              return (STRESSORS as any)?.[code] ?? (stressor_list as any)?.[code] ?? String(code).replace(/^stressor_/, '').replace(/_/g, ' ');
+            }).filter(Boolean);
+            summary[k] = mapped.length ? mapped : undefined;
+          } else {
+            summary[k] = undefined;
+          }
+        } else if (Array.isArray(v)) {
+          summary[k] = v.length ? mean(v) : undefined;
+        } else {
+          summary[k] = v;
+        }
       }
 
       b.avgInternal = Number.isNaN(avgInternal) ? undefined : avgInternal;

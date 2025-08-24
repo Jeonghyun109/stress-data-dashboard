@@ -39,9 +39,9 @@ const Header: React.FC<{
   showPhys: boolean;
   setShowPhys: (v: boolean) => void;
 }> = ({ showPsych, setShowPsych, showPhys, setShowPhys }) => (
-  <div className="mb-6 flex flex-col items-center justify-between">
+  <div className="mb-6 flex flex-col justify-between">
     <h2 className="text-2xl font-bold text-gray-800">일간 스트레스 변화 캘린더</h2>
-    <div className="w-full flex flex-col items-end gap-2">
+    <div className="w-full flex flex-col items-end gap-2 mt-6">
       <ToggleSwitch active={showPsych} onToggle={() => setShowPsych(!showPsych)} color="#A78BFA" label="인지 스트레스 점수" />
       <ToggleSwitch active={showPhys} onToggle={() => setShowPhys(!showPhys)} color="#F59E0B" label="신체 스트레스 점수" />
     </div>
@@ -181,7 +181,7 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
 
   const WeekLabels = () => (
     // <div className="grid [grid-template-columns:repeat(7,minmax(0,1fr))_1.6fr] gap-0.5 mt-6"></div>
-    <div className="grid grid-cols-7 gap-0.5 mt-6">
+    <div className="grid grid-cols-7 gap-0.5 mt-3">
       {['일', '월', '화', '수', '목', '금', '토'].map((day, i) => (
         <div
           key={day + i}
