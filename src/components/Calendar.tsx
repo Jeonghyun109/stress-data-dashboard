@@ -42,8 +42,8 @@ const Header: React.FC<{
   <div className="mb-6 flex flex-col items-center justify-between">
     <h2 className="text-2xl font-bold text-gray-800">일간 스트레스 변화 캘린더</h2>
     <div className="w-full flex flex-col items-end gap-2">
-      <ToggleSwitch active={showPsych} onToggle={() => setShowPsych(!showPsych)} color="#2563EB" label="인지 스트레스 점수" />
-      <ToggleSwitch active={showPhys} onToggle={() => setShowPhys(!showPhys)} color="#DC2626" label="신체 스트레스 점수" />
+      <ToggleSwitch active={showPsych} onToggle={() => setShowPsych(!showPsych)} color="#A78BFA" label="인지 스트레스 점수" />
+      <ToggleSwitch active={showPhys} onToggle={() => setShowPhys(!showPhys)} color="#F59E0B" label="신체 스트레스 점수" />
     </div>
   </div>
 );
@@ -115,8 +115,8 @@ const levelToClass = (type: Stress, lvl: number) => {
   return STRESS_CLASSES[type][lvl] ?? '';
 };
 const levelToHex = (type: Stress, lvl: number) => {
-  if (lvl < 0) return '#ffffff';
-  return STRESS_HEX[type][lvl] ?? '#ffffff';
+  if (lvl < 0) return '';
+  return STRESS_HEX[type][lvl] ?? '';
 };
 
   const getDateStyle = (date: Date) => {
