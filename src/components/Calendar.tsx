@@ -120,9 +120,9 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
   };
 
   const getDateStyle = (date: Date) => {
+    if (date.getMonth() !== month) return { className: 'text-gray-400', style: { backgroundColor: '#F3F4F6' } };
     const fixedDate = new Date(date)
     fixedDate.setDate(fixedDate.getDate() + 1)
-    if (fixedDate.getMonth() !== month) return { className: 'text-gray-400', style: { backgroundColor: '#F3F4F6' } };
 
     // const key = date.toISOString().slice(0, 10);
     const key = fixedDate.toISOString().slice(0, 10);
