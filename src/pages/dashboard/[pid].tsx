@@ -62,10 +62,10 @@ const Home: React.FC = () => {
         <div className="max-w-7xl mx-auto mt-6 flex flex-col gap-6">
           <StressType />
           <div className="flex flex-row gap-4">
-            <button className={`font-semibold text-xl cursor-pointer px-4 py-2 border-1 rounded-md border-gray-200 ${!isDeltaMode ? 'bg-gray-200' : ''}`} onClick={() => setDeltaMode(false)}>
+            <button className={`font-semibold text-xl cursor-pointer px-4 py-2 border-1 rounded-md border-gray-200 ${!isDeltaMode ? 'bg-blue-100' : ''}`} onClick={() => setDeltaMode(false)}>
               <span className="">상태 모드</span>
             </button>
-            <button className={`font-semibold text-xl cursor-pointer px-4 py-2 border-1 rounded-md border-gray-200 ${isDeltaMode ? 'bg-gray-200' : ''}`} onClick={() => setDeltaMode(true)}>
+            <button className={`font-semibold text-xl cursor-pointer px-4 py-2 border-1 rounded-md border-gray-200 ${isDeltaMode ? 'bg-blue-100' : ''}`} onClick={() => setDeltaMode(true)}>
               <span>변화 모드</span>
             </button>
           </div>
