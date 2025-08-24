@@ -3,8 +3,6 @@ import Timeline from "@/components/Timeline";
 import Treemap from "@/components/Treemap";
 import Barchart from "@/components/Barchart";
 
-import ChangeMode from "@/legacy/ChangeMode";
-
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { CONTENT } from "@/data/stressType";
@@ -96,7 +94,6 @@ const Home: React.FC = () => {
         </div>
       </div>
     </div>
-    <ChangeMode />
     </>
   );
 }
