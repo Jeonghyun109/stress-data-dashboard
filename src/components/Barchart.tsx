@@ -21,7 +21,7 @@ const Barchart: React.FC<{ pid?: string | number }> = ({ pid }) => {
   if (loading) return <div>Loading chart...</div>;
   if (error) return <div>Error: {error}</div>;
 
-  const baseOptions = ( color: string, categoriesForChart: string[]): ApexOptions => ({
+  const baseOptions = (color: string, categoriesForChart: string[]): ApexOptions => ({
     chart: { type: 'bar', toolbar: { show: false }, parentHeightOffset: 0 },
     plotOptions: { bar: { dataLabels: { position: 'top' }, columnWidth: '35%' } },
     dataLabels: {
@@ -48,31 +48,31 @@ const Barchart: React.FC<{ pid?: string | number }> = ({ pid }) => {
     colors: [color],
   });
 
-  const perceivedApex: ApexAxisChartSeries = [{ data: perceivedSeriesSorted }];
-  const physioApex: ApexAxisChartSeries = [{ data: physioSeriesSorted }];
+  const perceivedApex: ApexAxisChartSeries = [{ name: "", data: perceivedSeriesSorted }];
+  const physioApex: ApexAxisChartSeries = [{ name: "", data: physioSeriesSorted }];
 
   return (
     <div className="w-full my-4 flex gap-20 justify-between">
-        <div className="w-1/2">
-            <div className="font-semibold text-2xl">{CONTENT.BODY_1.TITLE}</div>
-            <ReactApexChart
-                options={baseOptions('#6B21A8', categoriesPerceivedSorted)}
-                series={perceivedApex}
-                type="bar"
-                height={320}
-                width={600}
-            />
-        </div>
-        <div className="w-1/2">
-            <div className="font-semibold text-2xl">{CONTENT.BODY_2.TITLE}</div>
-            <ReactApexChart
-                options={baseOptions('#D97706', categoriesPhysioSorted)}
-                series={physioApex}
-                type="bar"
-                height={320}
-                width={600}
-            />
-        </div>
+      <div className="w-1/2">
+        <div className="font-semibold text-2xl">{CONTENT.BODY_1.TITLE}</div>
+        <ReactApexChart
+          options={baseOptions('#6B21A8', categoriesPerceivedSorted)}
+          series={perceivedApex}
+          type="bar"
+          height={320}
+          width={600}
+        />
+      </div>
+      <div className="w-1/2">
+        <div className="font-semibold text-2xl">{CONTENT.BODY_2.TITLE}</div>
+        <ReactApexChart
+          options={baseOptions('#D97706', categoriesPhysioSorted)}
+          series={physioApex}
+          type="bar"
+          height={320}
+          width={600}
+        />
+      </div>
     </div>
   );
 };

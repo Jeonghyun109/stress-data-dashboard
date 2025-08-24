@@ -40,12 +40,11 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
       })
     }))
 
-    console.log(result)
     return result
   };
 
-  const psycho_sum: number[] = ['stressor', 'env', 'context', 'daily_context'].map(v => groupedByType[v as TreemapCategory]['psychological'][0].data.reduce((acc: number, curr: TreemapDatum) => acc + curr.y, 0))
-  const physio_sum: number[] = ['stressor', 'env', 'context', 'daily_context'].map(v => groupedByType[v as TreemapCategory]['physiological'][0].data.reduce((acc: number, curr: TreemapDatum) => acc + curr.y, 0))
+  const psycho_sum: number[] = ['stressor', 'env', 'context', 'daily_context'].map(v => groupedByType[v as TreemapCategory]['psychological'][0].data.map(d => d.y).reduce((acc: number, curr: number) => acc + curr, 0))
+  const physio_sum: number[] = ['stressor', 'env', 'context', 'daily_context'].map(v => groupedByType[v as TreemapCategory]['physiological'][0].data.map(d => d.y).reduce((acc: number, curr: number) => acc + curr, 0))
 
   const options = (color: string): ApexOptions => {
     // const series = getSeries(topType, type)

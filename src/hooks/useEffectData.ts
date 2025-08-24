@@ -92,9 +92,9 @@ export default function useEffectData(csvUrl = "/data/diff_rate.csv", pid?: stri
           setPhysioSeries(physio);
           setLoading(false);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (mounted) {
-          setError(err?.message ?? String(err));
+          setError(err instanceof Error ? err.message : String(err));
           setLoading(false);
         }
       }
@@ -102,7 +102,7 @@ export default function useEffectData(csvUrl = "/data/diff_rate.csv", pid?: stri
 
     load();
     return () => { mounted = false; };
-  }, [csvUrl, String(pid ?? "")]);
+  }, [csvUrl, pid]);
 
   // create sorted views (descending)
   const makeSorted = (cats: string[], values: number[]) => {
