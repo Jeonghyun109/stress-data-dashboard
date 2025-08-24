@@ -105,7 +105,8 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
         for (const r of filteredRows) {
           const rowPid = String(r.pid ?? r.participant_id ?? r.user_id ?? '');
           const tRaw = new Date(r.surveyTime);
-          const iso = tRaw.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+          // Use local date string to avoid UTC offset issues
+          const iso = `${tRaw.getFullYear()}-${String(tRaw.getMonth() + 1).padStart(2, '0')}-${String(tRaw.getDate()).padStart(2, '0')}`; // 'YYYY-MM-DD'
           const calls = new Date(r.callEndTime).toISOString();
 
           // build feature object for this row (pick requested fields)
