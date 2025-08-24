@@ -5,6 +5,8 @@ import type { ApexOptions } from 'apexcharts';
 import React from 'react';
 import useEffectData from '@/hooks/useEffectData';
 import { CONTENT } from '@/data/stressEffect';
+import BarChartReport from './report/BarChartReport';
+
 
 // SSR(window) 회피
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
@@ -65,6 +67,9 @@ const Barchart: React.FC<{ pid?: string | number }> = ({ pid }) => {
           height={320}
           width={600}
         />
+        <div>
+          <BarChartReport pid={pid ?? ''} type="psychological" />
+        </div>
       </div>
       <div className="w-1/2">
         <div className="font-semibold text-2xl">{CONTENT.BODY_2.TITLE}</div>
@@ -75,6 +80,9 @@ const Barchart: React.FC<{ pid?: string | number }> = ({ pid }) => {
           height={320}
           width={600}
         />
+        <div>
+          <BarChartReport pid={pid ?? ''} type="physiological" />
+        </div>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { CONTENT } from "@/data/stressType";
 import Barchart from "./Barchart";
 import { useState } from "react";
 import DiffCalendar from "./DiffCalendar";
+import BarChartReport from "./report/BarChartReport";
 
 const DeltaPage: React.FC<{ pid: string }> = ({ pid }) => {
   // const [selectedDate, setSelectedDate] = useState<Date | null>(null);

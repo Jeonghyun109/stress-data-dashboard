@@ -32,7 +32,7 @@ const getTopNFromData = (data: { x: string, y: number }[], n: number) => {
 
   const topItems = sortedData.filter((item: { x: string, y: number }, index: number) => {
     if (index < n) return true; // Top N은 항상 포함
-    return item.y / nthScore >= 0.85 * index / n; // N등과 비슷한 점수인 항목들도 포함
+    return Math.abs(item.y / nthScore) >= 0.85 * index / n; // N등과 비슷한 점수인 항목들도 포함
   });
 
   return topItems.map((item: { x: string, y: number, type?: TreemapCategory }) => ({ name: item.x, type: item.type }));
@@ -100,7 +100,8 @@ const TreeMapInfo: React.FC<{ pid: string, type: 'psychological' | 'physiologica
   const weirdRelations = useMemo(() => {
     if (loading) return []
     const flatData = NAMES.map((item) => groupedByType[item][type][0].data.map((v) => ({ ...v, type: item }))).flat()
-    const weirdRelations = weirdRelationCheck.filter(v => flatData.some(v2 => v2.x === v.name && ((v2.raw ?? 0) * (type === 'psychological' ? 1 : -1) > 0 === v.negative)))
+    const maxScore = Math.max(...flatData.map(v => v.y))
+    const weirdRelations = weirdRelationCheck.filter(v => flatData.some(v2 => v2.x === v.name && v2.y / maxScore > 0.2 && ((v2.raw ?? 0) * (type === 'psychological' ? 1 : -1) > 0 === v.negative)))
     return weirdRelations.map((item) => ({ name: labelMap(item.name), type: item.type ?? 'other', negative: item.negative }))
   }, [groupedByType, type, loading])
 

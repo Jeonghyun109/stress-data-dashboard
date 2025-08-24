@@ -29,7 +29,7 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
       name: group.name,
       data: group.data.map(datum => {
         const mapped = labelMap(datum.x);
-        return { x: mapped, y: datum.raw * 100, raw: datum.raw, fill: { type: 'image', opacity: 0, pattern: { style: 'verticalLines' } } };
+        return { x: mapped, y: datum.y, raw: datum.raw, fill: { type: 'image', opacity: 0, pattern: { style: 'verticalLines' } } };
       })
     }))
 
@@ -87,7 +87,7 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
             </div>
           </div>
         ))}
-        <div className="mt-4 w-full">
+        <div className="mt-8 w-full">
           <TreeMapInfo pid={pid} type="psychological" />
         </div>
       </div>
@@ -102,7 +102,7 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
             </div>
           </div>
         ))}
-        <div className="mt-4 w-full">
+        <div className="mt-8 w-full">
           <TreeMapInfo pid={pid} type="physiological" />
         </div>
       </div>
