@@ -15,6 +15,7 @@ type UseStressDataResult = {
   dailyMap: Map<string, DailyStress>;
   getForDate: (isoDate: string) => DailyStress | undefined;
   getRowsForDate: (isoDate: string) => Array<Record<string, any>>;
+  getInterventionsForDate: (isoDate: string) => Array<{ name: string; time: string }>;
 };
 
 /* --- helpers --- */
@@ -51,6 +52,7 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
   const [error, setError] = useState<string | null>(null);
   const [dailyMap, setDailyMap] = useState<Map<string, DailyStress>>(new Map());
   const [rowsByDate, setRowsByDate] = useState<Map<string, Array<Record<string, any>>>>(new Map());
+  const [interventionsByDate, setInterventionsByDate] = useState<Map<string, Array<{ name: string; time: string }>>>(new Map());
 
   useEffect(() => {
     console.log('useStressData received PID ', pid);
@@ -80,6 +82,20 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           : rows;
         // console.log(filteredRows);
 
+        // Intervention Records
+        const interventionRecords = filteredRows.filter(r => r.surveyName === "after_intervention_survey");
+        // build interventionsByDate map (date -> [{name, time}, ...])
+        const _interventionsByDate = new Map<string, Array<{ name: string, time: string }>>();
+        for (const rec of interventionRecords) {
+          const t = rec.surveyTime ? new Date(rec.surveyTime) : null;
+          const iso = t ? t.toISOString().slice(0, 10) : (rec.surveyTimeString ? String(rec.surveyTimeString).slice(0, 10) : null);
+          const name = String(rec.interventionName ?? '');
+          if (!iso) continue;
+          if (!_interventionsByDate.has(iso)) _interventionsByDate.set(iso, []);
+          _interventionsByDate.get(iso)!.push({ name, time: t ? t.toISOString() : String(rec.surveyTime) });
+        }
+        // will set state later once mounted
+
         const byDay = new Map<string, {
           psychVals: number[];
           rmssdVals: number[];
@@ -90,6 +106,7 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           const rowPid = String(r.pid ?? r.participant_id ?? r.user_id ?? '');
           const tRaw = new Date(r.surveyTime);
           const iso = tRaw.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+          const calls = new Date(r.callEndTime).toISOString();
 
           // build feature object for this row (pick requested fields)
           const stress = toNumber(r.stress ?? NaN); // cognitive stress 0..4
@@ -142,6 +159,7 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
             pid: rowPid,
             iso,
             isoTime: tRaw.toISOString(), // 추가된 필드
+            calls,
             // stress
             stress: isValid(stress) ? stress : undefined,
             // physiological
@@ -185,6 +203,9 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
             co2_mean: isValid(co2_mean) ? co2_mean : undefined,
             tvoc_mean: isValid(tvoc_mean) ? tvoc_mean : undefined,
             temperature_mean: isValid(temperature_mean) ? temperature_mean : undefined,
+            // intervention info (if this row is an intervention survey)
+            interventionName: r.surveyName === 'after_intervention_survey' ? (r.interventionName ?? r.intervention ?? undefined) : undefined,
+            interventionTime: r.surveyName === 'after_intervention_survey' ? (tRaw.toISOString()) : undefined,
             // keep original row for reference (optional)
             _raw: r,
           };
@@ -193,7 +214,7 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           rawByDate.get(iso)!.push(featureRow);
 
           // existing aggregation inputs (keep same as before)
-          const psych = toNumber(r.stress ?? NaN);
+          const psych = toNumber(r.stress ?? NaN) - 1;
           const rmssd_forAgg = toNumber(r.rmssd ?? NaN);
 
           if (!byDay.has(iso)) {
@@ -251,6 +272,7 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
         if (mounted) {
           setDailyMap(out);
           setRowsByDate(rawByDate); // now returns feature rows per date
+          setInterventionsByDate(_interventionsByDate);
           setLoading(false);
         }
       } catch (err: unknown) {
@@ -269,6 +291,7 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
 
   const getForDate = (isoDate: string) => dailyMap.get(isoDate);
   const getRowsForDate = (isoDate: string) => rowsByDate.get(isoDate) ?? [];
+  const getInterventionsForDate = (isoDate: string) => interventionsByDate.get(isoDate) ?? [];
 
-  return { loading, error, dailyMap, getForDate, getRowsForDate };
+  return { loading, error, dailyMap, getForDate, getRowsForDate, getInterventionsForDate };
 }
