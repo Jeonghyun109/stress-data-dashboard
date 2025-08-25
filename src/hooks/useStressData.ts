@@ -94,6 +94,7 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           if (!_interventionsByDate.has(iso)) _interventionsByDate.set(iso, []);
           _interventionsByDate.get(iso)!.push({ name, time: t ? t.toISOString() : String(rec.surveyTime) });
         }
+
         // will set state later once mounted
 
         const byDay = new Map<string, {
@@ -106,7 +107,8 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           const rowPid = String(r.pid ?? r.participant_id ?? r.user_id ?? '');
           const tRaw = new Date(r.surveyTime);
           // Use local date string to avoid UTC offset issues
-          const iso = `${tRaw.getFullYear()}-${String(tRaw.getMonth() + 1).padStart(2, '0')}-${String(tRaw.getDate()).padStart(2, '0')}`; // 'YYYY-MM-DD'
+          // const iso = `${tRaw.getFullYear()}-${String(tRaw.getMonth() + 1).padStart(2, '0')}-${String(tRaw.getDate()).padStart(2, '0')}`; // 'YYYY-MM-DD'
+          const iso = tRaw.toISOString().slice(0, 10);
           const calls = new Date(r.callEndTime).toISOString();
 
           // build feature object for this row (pick requested fields)
@@ -214,6 +216,7 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           if (!rawByDate.has(iso)) rawByDate.set(iso, []);
           rawByDate.get(iso)!.push(featureRow);
 
+
           // existing aggregation inputs (keep same as before)
           const psych = toNumber(r.stress ?? NaN) - 1;
           const rmssd_forAgg = toNumber(r.rmssd ?? NaN);
@@ -225,6 +228,13 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           entry.psychVals.push(psych);
           entry.rmssdVals.push(rmssd_forAgg);
         }
+
+        // 각 날짜별 배열을 isoTime에 따라 정렬
+        for (const [date, rows] of rawByDate.entries()) {
+          rawByDate.set(date, rows.sort((a, b) => new Date(a.isoTime).getTime() - new Date(b.isoTime).getTime()));
+        }
+
+        console.log(rawByDate)
 
         // 날짜별로 묶인 행들을 콘솔에 출력
         // console.log('=== rows grouped by date ===');
@@ -285,8 +295,6 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
     load();
     return () => { mounted = false; };
   }, [csvUrl, pid]);
-
-  console.log(dailyMap)
 
   const getForDate = (isoDate: string) => dailyMap.get(isoDate);
   const getRowsForDate = (isoDate: string) => rowsByDate.get(isoDate) ?? [];

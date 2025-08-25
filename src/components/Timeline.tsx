@@ -29,7 +29,7 @@ const STRESS_COLORS = {
   },
 } as const;
 
-const ADDITIONAL_ITEMS = ['CO2', '온도', '습도', '콜 유형', '수면의 질', '각성/흥분 정도', '정서적 긍부정 정도', '피로도', '감정을 숨기려는 노력'];
+// const ADDITIONAL_ITEMS = ['CO2', '온도', '습도', '콜 유형', '수면의 질', '각성/흥분 정도', '정서적 긍부정 정도', '피로도', '감정을 숨기려는 노력'];
 
 const LEGEND_DATA = {
   internal: [
@@ -380,11 +380,14 @@ const Timeline: React.FC<TimelineProps> = ({
   selectedDate,
 }) => {
   // load csv (filtered by pid)
+  console.log(selectedDate.toISOString())
 
-  const fixedDate = new Date(new Date(selectedDate).setDate(selectedDate.getDate() + 1))
+  const dateString = new Date(selectedDate.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+  // const fixedDate = new Date(new Date(selectedDate).setDate(selectedDate.getDate() + 1))
   const { loading, getForDate, getRowsForDate, getInterventionsForDate } = useStressData('/data/feature_full.csv', pid);
-  const rows = getRowsForDate(fixedDate.toISOString().slice(0, 10));
-  const interventions = getInterventionsForDate(fixedDate.toISOString().slice(0, 10));
+  const rows = getRowsForDate(dateString);
+  const interventions = getInterventionsForDate(dateString);
   console.log(rows)
 
   // prepare buckets
@@ -401,8 +404,8 @@ const Timeline: React.FC<TimelineProps> = ({
 
     if (!rows || rows.length === 0) {
       // create empty buckets across working-day heuristic
-      const dayStart = new Date(fixedDate.getFullYear(), fixedDate.getMonth(), fixedDate.getDate(), 8, 0, 0).getTime();
-      const dayEnd = new Date(fixedDate.getFullYear(), fixedDate.getMonth(), fixedDate.getDate(), 18, 0, 0).getTime();
+      const dayStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 8, 0, 0).getTime() + 9 * 60 * 60 * 1000;
+      const dayEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 20, 0, 0).getTime() + 9 * 60 * 60 * 1000;
       const span = Math.max(1, dayEnd - dayStart);
       for (let i = 0; i < SLOTS_COUNT; i++) {
         const s = Math.floor(dayStart + (i * span) / SLOTS_COUNT);
@@ -420,8 +423,8 @@ const Timeline: React.FC<TimelineProps> = ({
     let startMs: number;
     let endMs: number;
     if (epochs.length === 0) {
-      startMs = new Date(fixedDate.getFullYear(), fixedDate.getMonth(), fixedDate.getDate(), 8, 0, 0).getTime();
-      endMs = new Date(fixedDate.getFullYear(), fixedDate.getMonth(), fixedDate.getDate(), 18, 0, 0).getTime();
+      startMs = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 8, 0, 0).getTime() + 9 * 60 * 60 * 1000;
+      endMs = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 20, 0, 0).getTime() + 9 * 60 * 60 * 1000;
     } else {
       const minE = Math.min(...epochs);
       const maxE = Math.max(...epochs);
@@ -570,7 +573,7 @@ const Timeline: React.FC<TimelineProps> = ({
     }
 
     return out;
-  }, [rows, fixedDate]);
+  }, [rows, selectedDate]);
 
   const call_log = rows.map(r => r.calls);
 
