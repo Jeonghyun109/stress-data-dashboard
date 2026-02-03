@@ -25,7 +25,7 @@ const DeltaPage: React.FC<{ pid: string }> = ({ pid }) => {
         </div>
       </div>
       <div>
-        <div className="font-semibold text-3xl mt-12">지난 한 달 동안, 스트레스 완화 활동이 실제로 도움이 되었나요?</div>
+        <div className="font-semibold text-3xl mt-12">Over the past month, did stress-relief interventions actually help?</div>
         <div className="flex flex-col gap-8 items-start">
           {/* Barchart */}
           {pid && <Barchart pid={pid} />}

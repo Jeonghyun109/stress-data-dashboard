@@ -18,17 +18,26 @@ const BarChartTemplate: React.FC<{
   topInterventions: { name: string, value: number }[],
   worstInterventions: { name: string, value: number }[],
 }> = ({ type, topInterventions, worstInterventions }) => {
-  const stressType = type === 'psychological' ? <strong className="text-violet-500">인지 스트레스</strong> : <strong className="text-orange-500">신체 스트레스</strong>;
-  const stressTypeText = type === 'psychological' ? '인지 스트레스' : '신체 스트레스';
-
-  const topInterventionNames = topInterventions.map(item => `${item.name} (${item.value.toFixed(1)}%)`);
-  const worstInterventionNames = worstInterventions.map(item => `${item.name} (${item.value.toFixed(1)}%)`);
+  const stressType = type === 'psychological' ? <strong className="text-violet-500">perceived stress</strong> : <strong className="text-orange-500">physiological stress</strong>;
+  const stressTypeText = type === 'psychological' ? 'perceived stress' : 'physiological stress';
+  const INTERVENTION_LABELS_EN: Record<string, string> = {
+    "스트레칭": "Stretching",
+    "당 충전하기": "Sugar Boost",
+    "지금 듣고 싶은 말": "Words I Need Right Now",
+    "호흡하기": "Deep Breathing",
+    "나를 지켜줘": "Protect Me",
+    "화 먹는 요정": "Anger-Eating Fairy",
+    "나 잘했지?": "I Did Well, Right?",
+    "지금, 나 때문일까?": "Is It Because of Me?",
+  };
+  const topInterventionNames = topInterventions.map(item => `${INTERVENTION_LABELS_EN[item.name]} (${item.value.toFixed(1)}%)`);
+  const worstInterventionNames = worstInterventions.map(item => `${INTERVENTION_LABELS_EN[item.name]} (${item.value.toFixed(1)}% reduction, i.e., an increase)`);
 
   return <>
-    당신의 {stressType}는 <strong style={{ color: '#14b8a6' }}>{topInterventionNames.join(', ')}</strong>{josa.pick(topInterventionNames.at(-1) ?? '', '을/를')} 했을 때 많이 저감되었습니다. <br />
+    Your {stressType} decreased the most with <strong style={{ color: '#14b8a6' }}>{topInterventionNames.join(' and ')}</strong>{josa.pick(topInterventionNames.at(-1) ?? '', '')}. <br />
 
     {worstInterventions.length > 0 && worstInterventions[0]?.value < 0 && <>
-      반면, <strong style={{ color: '#f87171' }}>{worstInterventionNames.join(', ')}</strong>를 했을 때는 오히려 {stressTypeText}가 증가하는 경향을 보였습니다.<br />
+      In contrast, <strong style={{ color: '#f87171' }}>{worstInterventionNames.join(', ')}</strong> was associated with higher {stressTypeText}.<br />
     </>}
   </>
 }

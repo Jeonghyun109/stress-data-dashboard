@@ -33,18 +33,18 @@ const STRESS_COLORS = {
 
 const LEGEND_DATA = {
   internal: [
-    { level: 0, color: 'bg-violet-50', label: '0: 전혀 느끼지 않음' },
-    { level: 1, color: 'bg-violet-100', label: '1: 약간 느낌' },
-    { level: 2, color: 'bg-violet-200', label: '2: 어느 정도 느낌' },
-    { level: 3, color: 'bg-violet-300', label: '3: 꽤 느낌' },
-    { level: 4, color: 'bg-violet-400', label: '4: 매우 느낌' },
+    { level: 0, color: 'bg-violet-50', label: '0: Not at all' },
+    { level: 1, color: 'bg-violet-100', label: '1: A little' },
+    { level: 2, color: 'bg-violet-200', label: '2: Somewhat' },
+    { level: 3, color: 'bg-violet-300', label: '3: Quite a bit' },
+    { level: 4, color: 'bg-violet-400', label: '4: Very much' },
   ],
   physical: [
-    { level: 0, color: 'bg-yellow-100', label: '0: 없음 (0-20)' },
-    { level: 1, color: 'bg-yellow-200', label: '1: 조금 (20-40)' },
-    { level: 2, color: 'bg-yellow-300', label: '2: 중간 (40-60)' },
-    { level: 3, color: 'bg-yellow-400', label: '3: 꽤 높음 (60-80)' },
-    { level: 4, color: 'bg-yellow-500', label: '4: 매우 높음 (80-100)' },
+    { level: 0, color: 'bg-yellow-100', label: '0: None (0-20)' },
+    { level: 1, color: 'bg-yellow-200', label: '1: Slight (20-40)' },
+    { level: 2, color: 'bg-yellow-300', label: '2: Moderate (40-60)' },
+    { level: 3, color: 'bg-yellow-400', label: '3: High (60-80)' },
+    { level: 4, color: 'bg-yellow-500', label: '4: Very high (80-100)' },
   ],
 };
 
@@ -77,10 +77,12 @@ const getStressColor = (level: number, type: 'internal' | 'physical'): string =>
   return STRESS_COLORS[type][level as keyof typeof STRESS_COLORS[typeof type]] || 'bg-gray-100';
 };
 
+const month_map = (m: number) => { if (m == 7) return "July"; else if (m == 8) return "August"; }
+
 // UI components unchanged (Header, LegendGroup, Legend)
 const Header: React.FC<{ date: Date }> = ({ date }) => (
   <div className="mb-6">
-    <h2 className="text-2xl font-bold text-gray-800 mb-2">{date.getFullYear()}년 {date.getMonth() + 1}월 {date.getDate()}일에 받은 스트레스</h2>
+    <h2 className="text-2xl font-bold text-gray-800 mb-2">Stress on {month_map(date.getMonth() + 1)} {date.getDate()}, {date.getFullYear()}</h2>
   </div>
 );
 
@@ -143,6 +145,16 @@ const TimelineChart: React.FC<{
   }, []);
 
   const colTemplate = `repeat(${buckets.length}, minmax(0, 1fr))`;
+  const INTERVENTION_LABELS_EN: Record<string, string> = {
+    "스트레칭": "Stretching",
+    "당 충전하기": "Sugar Boost",
+    "지금 듣고 싶은 말": "Words I Need Right Now",
+    "호흡하기": "Deep Breathing",
+    "나를 지켜줘": "Protect Me",
+    "화 먹는 요정": "Anger-Eating Fairy",
+    "나 잘했지?": "I Did Well, Right?",
+    "지금, 나 때문일까?": "Is It Because of Me?",
+  };
 
   return (
     <>
@@ -150,11 +162,11 @@ const TimelineChart: React.FC<{
         {/* Row labels */}
         <div className="absolute left-0 top-0 bottom-8 flex flex-col justify-between w-28 pr-4 my-12">
           <div className="font-medium text-gray-700 text-center leading-tight">
-            내가 체감한 <div className="font-bold text-purple-600">인지 스트레스</div>
+            <div className="font-bold text-purple-600">Perceived stress</div>
           </div>
-          <div className="text-center text-sm">콜 응대 기록</div>
+          <div className="text-center text-sm">Call record</div>
           <div className="font-medium text-gray-700 text-center leading-tight">
-            내 몸이 느낀 <div className="font-bold text-yellow-600">신체 스트레스</div>
+            <div className="font-bold text-yellow-600">Physiological stress</div>
           </div>
         </div>
 
@@ -216,7 +228,7 @@ const TimelineChart: React.FC<{
                             <React.Fragment key={`iv-${j}`}>
                               {/* vertical dashed line */}
                               <div
-                                title={`${iv.name ?? 'intervention'} ${formatTime(tI)}`}
+                                title={`${INTERVENTION_LABELS_EN[iv.name] ?? 'intervention'} ${formatTime(tI)}`}
                                 style={{
                                   position: 'absolute',
                                   left: `calc(${leftPctI}% )`,
@@ -326,45 +338,45 @@ const TimelineChart: React.FC<{
 
         return (
           <div onClick={(e) => e.stopPropagation()}>
-            <div className="text-lg text-center font-bold mt-12 mb-6">{formatTime(b.startMs)}~{formatTime(b.endMs)}에 수집된 데이터</div>
+            <div className="text-lg text-center font-bold mt-12 mb-6">Data collected {formatTime(b.startMs)} ~ {formatTime(b.endMs)}</div>
             <div className="text-gray-700 flex flex-row gap-12">
               <div className="w-1/2">
-                <div className="font-bold">스트레스 데이터</div>
-                {b.avgInternal !== undefined && <div>인지 스트레스 레벨: {b.avgInternal} / 4</div>}
-                {b.avgPhysical !== undefined && <div>신체 스트레스 레벨: {b.avgPhysical} / 4</div>}
+                <div className="font-bold">Stress data</div>
+                {b.avgInternal !== undefined && <div>Perceived stress score: {b.avgInternal} / 4</div>}
+                {b.avgPhysical !== undefined && <div>Physiological stress score: {b.avgPhysical} / 4</div>}
                 <div className="h-3" />
 
-                {summary.stressor?.length > 0 && <div className="font-bold">스트레스 요인</div>}
+                {summary.stressor?.length > 0 && <div className="font-bold">Stressor</div>}
                 {summary.stressor?.length > 0 && <div className="h-auto">{summary.stressor.join(', ')}</div>}
                 {summary.stressor?.length > 0 && <div className="h-3" />}
 
-                <div className="font-bold">아침 상황 데이터</div>
-                {summary.daily_arousal !== undefined && <div>감정의 강도: {summary.daily_arousal.toFixed(2)} / 5</div>}
-                {summary.daily_valence !== undefined && <div>감정의 긍정도: {summary.daily_valence.toFixed(2)} / 5</div>}
-                {summary.daily_tiredness !== undefined && <div>피로도: {summary.daily_tiredness.toFixed(2)} / 5</div>}
-                {summary.daily_general_health !== undefined && <div>전반적인 건강: {summary.daily_general_health.toFixed(2)} / 5</div>}
-                {summary.daily_general_sleep !== undefined && <div>수면의 질: {summary.daily_general_sleep.toFixed(2)} / 5</div>}
+                <div className="font-bold">Pre-shift data</div>
+                {summary.daily_arousal !== undefined && <div>Emotional arousal: {summary.daily_arousal.toFixed(2)} / 5</div>}
+                {summary.daily_valence !== undefined && <div>Emotional valence: {summary.daily_valence.toFixed(2)} / 5</div>}
+                {summary.daily_tiredness !== undefined && <div>Fatigue: {summary.daily_tiredness.toFixed(2)} / 5</div>}
+                {summary.daily_general_health !== undefined && <div>General health: {summary.daily_general_health.toFixed(2)} / 5</div>}
+                {summary.daily_general_sleep !== undefined && <div>Sleep quality: {summary.daily_general_sleep.toFixed(2)} / 5</div>}
               </div>
               <div className="w-1/2">
-                <div className="font-bold">환경 데이터</div>
-                {summary.humidity_mean !== undefined && <div>습도: {summary.humidity_mean.toFixed(2)}%</div>}
-                {summary.co2_mean !== undefined && <div>이산화탄소 농도: {summary.co2_mean.toFixed(1)} ppm</div>}
-                {summary.tvoc_mean !== undefined && <div>공기질: {summary.tvoc_mean.toFixed(1)}ppm</div>}
-                {summary.temperature_mean !== undefined && <div>실내 온도: {summary.temperature_mean.toFixed(2)}도</div>}
+                <div className="font-bold">Environment data</div>
+                {summary.humidity_mean !== undefined && <div>Humidity: {summary.humidity_mean.toFixed(2)}%</div>}
+                {summary.co2_mean !== undefined && <div>CO2 concentration: {summary.co2_mean.toFixed(1)} ppm</div>}
+                {summary.tvoc_mean !== undefined && <div>Air quality: {summary.tvoc_mean.toFixed(1)}ppm</div>}
+                {summary.temperature_mean !== undefined && <div>Indoor temperature: {summary.temperature_mean.toFixed(2)}°C</div>}
                 <div className="h-3" />
 
-                <div className="font-bold">상황 데이터</div>
-                {summary.workload !== undefined && <div>업무량: {summary.workload.toFixed(2)} / 5</div>}
-                {summary.arousal !== undefined && <div>감정의 강도: {summary.arousal.toFixed(2)} / 5</div>}
-                {summary.valence !== undefined && <div>감정의 긍정도: {summary.valence.toFixed(2)} / 5</div>}
-                {summary.tiredness !== undefined && <div>피로도: {summary.tiredness.toFixed(2)} / 5</div>}
-                {summary.surface_acting !== undefined && <div>감정을 숨기려는 노력: {summary.surface_acting.toFixed(2)} / 5</div>}
-                <div>직전 콜 유형: {summary.call_type_angry ? '불만' : '일반'}</div>
+                <div className="font-bold">Work context data</div>
+                {summary.workload !== undefined && <div>Workload: {summary.workload.toFixed(2)} / 5</div>}
+                {summary.arousal !== undefined && <div>Emotional arousal: {summary.arousal.toFixed(2)} / 5</div>}
+                {summary.valence !== undefined && <div>Emotional valence: {summary.valence.toFixed(2)} / 5</div>}
+                {summary.tiredness !== undefined && <div>Fatigue: {summary.tiredness.toFixed(2)} / 5</div>}
+                {summary.surface_acting !== undefined && <div>Surface acting: {summary.surface_acting.toFixed(2)} / 5</div>}
+                <div>Previous call type: {summary.call_type_angry ? 'Complaint' : 'General'}</div>
                 {/* <div>Stressor count (sum flags): {summary.stressor_sum ?? 0}</div> */}
-                {summary.steps !== undefined && <div>평균 걸음수: {Math.round(summary.steps)}회</div>}
-                {summary.skintemp !== undefined && <div>피부 온도: {summary.skintemp.toFixed(2)}도</div>}
-                {summary.hr_minmax !== undefined && <div>평균 심박: {summary.hr_mean.toFixed(2)} bpm</div>}
-                {summary.acc_mean !== undefined && <div>평균 가속도계: {summary.acc_mean.toFixed(3)} m/s²</div>}
+                {summary.steps !== undefined && <div>Average steps: {Math.round(summary.steps)}</div>}
+                {summary.skintemp !== undefined && <div>Average skin temperature: {summary.skintemp.toFixed(2)}°C</div>}
+                {summary.hr_minmax !== undefined && <div>Average heart rate: {summary.hr_mean.toFixed(2)} bpm</div>}
+                {summary.acc_mean !== undefined && <div>Average accelerometer: {summary.acc_mean.toFixed(3)} m/s²</div>}
                 <div className="h-3" />
               </div>
             </div>

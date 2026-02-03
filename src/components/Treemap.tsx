@@ -58,7 +58,7 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
       tooltip: {
         y: {
           formatter: function (value) {
-            return value.toFixed(2) + '점'
+            return value.toFixed(2) + ''
           }
         }
       },

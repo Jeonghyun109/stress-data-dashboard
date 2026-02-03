@@ -53,6 +53,17 @@ const Barchart: React.FC<{ pid?: string | number }> = ({ pid }) => {
   const perceivedApex: ApexAxisChartSeries = [{ name: "", data: perceivedSeriesSorted }];
   const physioApex: ApexAxisChartSeries = [{ name: "", data: physioSeriesSorted }];
 
+const INTERVENTION_LABELS_EN: Record<string, string> = {
+  "스트레칭": "Stretching",
+  "당 충전하기": "Sugar Boost",
+  "지금 듣고 싶은 말": "Words I Need Right Now",
+  "호흡하기": "Deep Breathing",
+  "나를 지켜줘": "Protect Me",
+  "화 먹는 요정": "Anger-Eating Fairy",
+  "나 잘했지?": "I Did Well, Right?",
+  "지금, 나 때문일까?": "Is It Because of Me?",
+};
+
   return (
     perceivedSeriesSorted.length > 0 && physioSeriesSorted.length > 0 && <div className="w-full my-4 flex gap-20 justify-between">
       <div className="w-1/2">
@@ -60,7 +71,7 @@ const Barchart: React.FC<{ pid?: string | number }> = ({ pid }) => {
           <span key={index} className={part.color}>{part.txt}</span>
         ))}</div>
         <ReactApexChart
-          options={baseOptions('#14b8a6', categoriesPerceivedSorted)}
+          options={baseOptions('#14b8a6', categoriesPerceivedSorted.map((x) => INTERVENTION_LABELS_EN[x] ?? x))}
           series={perceivedApex}
           type="bar"
           height={320}
@@ -75,7 +86,7 @@ const Barchart: React.FC<{ pid?: string | number }> = ({ pid }) => {
           <span key={index} className={part.color}>{part.txt}</span>
         ))}</div>
         <ReactApexChart
-          options={baseOptions('#a3e635', categoriesPhysioSorted)}
+          options={baseOptions('#a3e635', categoriesPhysioSorted.map((x) => INTERVENTION_LABELS_EN[x] ?? x))}
           series={physioApex}
           type="bar"
           height={320}

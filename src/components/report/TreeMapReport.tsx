@@ -44,7 +44,7 @@ const TreemapTemplate: React.FC<{
   topData: { [key in TreemapCategory]: string[] }
   weirdRelations: { name: string, type: TreemapCategory, negative: boolean }[]
 }> = ({ type, top3, topData, weirdRelations }) => {
-  const stressType = type === 'psychological' ? <strong className="text-violet-500">인지 스트레스</strong> : <strong className="text-orange-500">신체 스트레스</strong>;
+  const stressType = type === 'psychological' ? <strong className="text-violet-500">perceived stress</strong> : <strong className="text-orange-500">physiological stress</strong>;
 
   const getColoredComponent = (item: { name: string, type: TreemapCategory }) => {
     if (item.type === 'stressor') return <strong style={{ color: '#A93F55' }}>{item.name}</strong>
@@ -61,21 +61,21 @@ const TreemapTemplate: React.FC<{
   const negativeWeirdRelations = weirdRelations.filter(v => !v.negative)
 
   return <>
-    당신의 {stressType}와 가장 연관성이 높은 항목은 {getJoinedColoredComponent(top3)}{josa.pick(top3.at(-1)?.name ?? '', '이였습니다/였습니다')}.<br />
+    Your {stressType} showed the strongest associations with {getJoinedColoredComponent(top3)}{josa.pick(top3.at(-1)?.name ?? '', '')}.<br />
 
-    데이터의 종류 별로 봤을 때, <strong style={{ color: '#A93F55' }}>스트레스 요인</strong> 중 가장 연관성이 높은 항목은 <strong style={{ color: '#A93F55' }}>{topData.stressor?.join()}</strong>{josa.pick(topData.stressor?.at(-1) ?? '', '이였습니다/였습니다')}.&nbsp;
-    <strong style={{ color: '#52B12C' }}>환경 데이터</strong>에서는 <strong style={{ color: '#52B12C' }}>{topData.env?.join(', ')}</strong>,&nbsp;
-    <strong style={{ color: '#33A1FD' }}>상황 데이터</strong>에서는 <strong style={{ color: '#33A1FD' }}>{topData.context?.join(', ')}</strong>{josa.pick(topData.context?.at(-1) ?? '', '이/가')} 가장 관련이 있었습니다.&nbsp;
-    <strong style={{ color: '#1c1e7a' }}>일일 상황 데이터</strong>에서는 <strong style={{ color: '#1c1e7a' }}>{topData.daily_context?.join(', ')}</strong>{josa.pick(topData.daily_context?.at(-1) ?? '', '이/가')} 가장 연관이 있었습니다. <br /><br />
+    Within <strong style={{ color: '#A93F55' }}>stressor</strong> category, the top correlates were <strong style={{ color: '#A93F55' }}>{topData.stressor?.join(', ')}</strong>{josa.pick(topData.stressor?.at(-1) ?? '', '')}.&nbsp;
+    In <strong style={{ color: '#52B12C' }}>environment</strong> category, <strong style={{ color: '#52B12C' }}>{topData.env?.join(', ')}</strong> had the highest association.&nbsp;
+    In <strong style={{ color: '#33A1FD' }}>work context</strong> category, <strong style={{ color: '#33A1FD' }}>{topData.context?.join(', ')}</strong>{josa.pick(topData.context?.at(-1) ?? '', '')} were most related.&nbsp;
+    In <strong style={{ color: '#1c1e7a' }}>pre-shift</strong> category, <strong style={{ color: '#1c1e7a' }}>{topData.daily_context?.join(', ')}</strong>{josa.pick(topData.daily_context?.at(-1) ?? '', '')} showed the strongest associations. <br /><br />
 
     {weirdRelations.length > 0 && <>
-      몇몇 데이터의 경우, 특이하게도 {stressType} 점수가 높을 수록 오히려
-      {positiveWeirdRelations.length > 0 && negativeWeirdRelations.length == 0 ? <> 높아지는({getJoinedColoredComponent(positiveWeirdRelations)}) </> : ''}
-      {positiveWeirdRelations.length == 0 && negativeWeirdRelations.length > 0 ? <> 낮아지는({getJoinedColoredComponent(negativeWeirdRelations)}) </> : ''}
-      {positiveWeirdRelations.length > 0 && negativeWeirdRelations.length > 0 ? <> 높아지거나({getJoinedColoredComponent(positiveWeirdRelations)}) 낮아지는({getJoinedColoredComponent(negativeWeirdRelations)}) </> : ''}
-      경향성을 보였습니다. <br /><br />
+      Notably, for several variables, higher {stressType} scores were associated with either
+      {positiveWeirdRelations.length > 0 && negativeWeirdRelations.length == 0 ? <> increases({getJoinedColoredComponent(positiveWeirdRelations)}) </> : ''}
+      {positiveWeirdRelations.length == 0 && negativeWeirdRelations.length > 0 ? <> decreases({getJoinedColoredComponent(negativeWeirdRelations)}) </> : ''}
+      {positiveWeirdRelations.length > 0 && negativeWeirdRelations.length > 0 ? <> increases({getJoinedColoredComponent(positiveWeirdRelations)}) or decreases({getJoinedColoredComponent(negativeWeirdRelations)}) </> : ''}
+      . <br /><br />
     </>}
-    관련도 점수를 더 자세히 보고 싶으시다면, 차트 위에 마우스를 올려보세요!
+    Tip: Hover over the chart to view the exact association scores!
   </>
 }
 
