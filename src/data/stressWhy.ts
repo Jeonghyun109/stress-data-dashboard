@@ -3,12 +3,12 @@ import { TreemapCategory } from "@/hooks/useCorrelationData";
 export type ContentType = {
   TITLE: string;
   BODY_1: {
-    TITLE: string;
+    TITLE: { txt: string, color: string }[];
     CATEGORY: Array<{ NAME: string; COLOR: string }>;
     // DESCRIPTION: Array<{ TXT: string; BOLD: boolean }>;
   };
   BODY_2: {
-    TITLE: string;
+    TITLE: { txt: string, color: string }[];
     CATEGORY: Array<{ NAME: string; COLOR: string }>;
     // DESCRIPTION: Array<{ TXT: string; BOLD: boolean }>;
   };
@@ -19,15 +19,18 @@ export const COLORS: string[] = ['#A93F55', '#52B12C', '#33A1FD', '#1c1e7a'];
 export const NAMES: TreemapCategory[] = ['stressor', 'env', 'context', 'daily_context'];
 
 export const CONTENT: ContentType = {
-  TITLE: "지난 한 달 동안, 당신은 왜 스트레스를 받았나요?",
+  TITLE: "Over the past month, when did you experience stress?",
   BODY_1: {
-    TITLE: "나의 인지 스트레스와 관련된 데이터", // TODO - 스트레스 이름 색 다르게 + 아이콘
-    // TITLE: "나의 인지 스트레스를 저감시킨 스트레스 완화 활동",
+    TITLE: [
+      { txt: "Data related to my ", color: '' },
+      { txt: "perceived stress", color: 'text-violet-500' },
+      { txt: "", color: '' },
+    ],
     CATEGORY: [
-      { NAME: "스트레스 요인", COLOR: COLORS[0] },
-      { NAME: "환경 데이터", COLOR: COLORS[1] },
-      { NAME: "상황 데이터", COLOR: COLORS[2] },
-      { NAME: "일일 상황 데이터", COLOR: COLORS[3] }
+      { NAME: "Stressor", COLOR: COLORS[0] },
+      { NAME: "Environment", COLOR: COLORS[1] },
+      { NAME: "Work context", COLOR: COLORS[2] },
+      { NAME: "Pre-shift", COLOR: COLORS[3] }
     ]
     // DESCRIPTION: [
     //     { TXT: '내가 "스트레스를 받고 있다"고 ', BOLD: false },
@@ -38,13 +41,16 @@ export const CONTENT: ContentType = {
     // ]
   },
   BODY_2: {
-    TITLE: "나의 신체 스트레스와 관련된 데이터", // TODO - 스트레스 이름 색 다르게 + 아이콘
-    // TITLE: "나의 신체 스트레스를 저감시킨 스트레스 완화 활동",
+    TITLE: [
+      { txt: "Data related to my ", color: '' },
+      { txt: "physiological stress", color: 'text-orange-500' },
+      { txt: "", color: '' },
+    ],
     CATEGORY: [
-      { NAME: "스트레스 요인", COLOR: COLORS[0] },
-      { NAME: "환경 데이터", COLOR: COLORS[1] },
-      { NAME: "상황 데이터", COLOR: COLORS[2] },
-      { NAME: "일일 상황 데이터", COLOR: COLORS[3] }
+      { NAME: "Stressor", COLOR: COLORS[0] },
+      { NAME: "Environment", COLOR: COLORS[1] },
+      { NAME: "Work context", COLOR: COLORS[2] },
+      { NAME: "Pre-shift", COLOR: COLORS[3] }
     ]
     // DESCRIPTION: [
     //     { TXT: '내 몸이 실제로 반응한 생리적인 긴장 수준, 즉 ', BOLD: false },
@@ -67,16 +73,16 @@ export const stressor_list = [
   'stressor_other',
 ];
 export const STRESSORS = {
-  stressor_lack_ability: "내 능력이 부족하다고 생각됨",
-  stressor_difficult_work: "업무를 숙지하기 어려움",
-  stressor_eval_pressure: "성과 평가가 부담됨",
-  stressor_work_bad: "업무방식이 불만스러움",
-  stressor_hard_communication: "고객과 소통이 안 됨",
-  stressor_rude_customer: "예의 없는 고객",
-  stressor_time_pressure: "시간적인 압박을 느낌",
-  stressor_noise: "주위 사람들의 소리가 신경 쓰임",
-  stressor_peer_conflict: "동료와 관련된 갈등이나 문제",
-  stressor_other: "기타"
+  stressor_lack_ability: "Felt that my abilities were insufficient",
+  stressor_difficult_work: "Difficulty in understanding the tasks",
+  stressor_eval_pressure: "Pressure from performance evaluation",
+  stressor_work_bad: "Dissatisfaction with work procedures",
+  stressor_hard_communication: "Communication issues with customers",
+  stressor_rude_customer: "Rude customers",
+  stressor_time_pressure: "Time pressure",
+  stressor_noise: "Noise from surrounding people",
+  stressor_peer_conflict: "Conflicts or issues with colleagues",
+  stressor_other: "Other"
 };
 
 export const env_list = ['humidity_mean', 'co2_mean', 'tvoc_mean', 'temperature_mean'];
@@ -119,10 +125,73 @@ export const daily_context_list = [
 ]
 
 export const DAILY_CONTEXT = {
-  daily_stress: "출근 시점의 스트레스",
-  daily_valence: "출근 시점의 감정 긍정도",
-  daily_arousal: "출근 시점의 감정 강도",
-  daily_tiredness: "출근 시점의 피로도",
-  daily_general_health: "출근 시점의 건강 상태",
-  daily_general_sleep_quality: "출근 전 수면의 질",
+  daily_stress: "Start-of-shift stress",
+  daily_valence: "Start-of-shift emotional valence",
+  daily_arousal: "Start-of-shift emotional arousal",
+  daily_tiredness: "Start-of-shift fatigue",
+  daily_general_health: "Start-of-shift general health",
+  daily_general_sleep_quality: "Sleep quality before the shift",
+}
+
+export const labelMap = (featureName: string) => {
+  switch (featureName) {
+    case 'stressor_lack_ability':
+      return 'Felt that my abilities were insufficient'
+    case 'stressor_difficult_work':
+      return 'Difficulty in understanding the tasks'
+    case 'stressor_eval_pressure':
+      return 'Pressure from performance evaluation'
+    case 'stressor_work_bad':
+      return 'Dissatisfaction with work procedures'
+    case 'stressor_hard_communication':
+      return 'Communication issues with customers'
+    case 'stressor_rude_customer':
+      return 'Rude customers'
+    case 'stressor_time_pressure':
+      return 'Time pressure'
+    case 'stressor_noise':
+      return 'Noise from surrounding people'
+    case 'stressor_peer_conflict':
+      return 'Conflicts or issues with colleagues'
+    case 'stressor_other':
+      return 'Other'
+    case 'humidity_mean':
+      return 'Humidity'
+    case 'co2_mean':
+      return 'CO2 concentration'
+    case 'tvoc_mean':
+      return 'Air quality'
+    case 'temperature_mean':
+      return 'Temperature'
+    case 'steps':
+      return 'Steps in the past hour'
+    case 'skintemp':
+      return 'Skin temperature'
+    case 'workload':
+      return 'Workload'
+    case 'arousal':
+      return 'Emotional arousal'
+    case 'valence':
+      return 'Emotional valence'
+    case 'tiredness':
+      return 'Fatigue'
+    case 'surface_acting':
+      return 'Surface acting'
+    case 'call_type_angry':
+      return 'Complaint call'
+    case 'daily_stress':
+      return 'Start-of-shift stress'
+    case 'daily_valence':
+      return 'Start-of-shift emotional valence'
+    case 'daily_arousal':
+      return 'Start-of-shift emotional arousal'
+    case 'daily_tiredness':
+      return 'Start-of-shift fatigue'
+    case 'daily_general_health':
+      return 'Start-of-shift general health'
+    case 'daily_general_sleep_quality':
+      return 'Sleep quality before the shift'
+    default:
+      return featureName
+  }
 }

@@ -41,10 +41,10 @@ const Header: React.FC<{
   setShowPhys: (v: boolean) => void;
 }> = ({ showPsych, setShowPsych, showPhys, setShowPhys }) => (
   <div className="mb-6 flex flex-col justify-between">
-    <h2 className="text-2xl font-bold text-gray-800">일간 스트레스 변화 캘린더</h2>
+    <h2 className="text-2xl font-bold text-gray-800">Daily stress trend calendar</h2>
     <div className="w-full flex flex-col items-end gap-2 mt-6">
-      <ToggleSwitch active={showPsych} onToggle={() => setShowPsych(!showPsych)} color="#A78BFA" label="인지 스트레스 점수" />
-      <ToggleSwitch active={showPhys} onToggle={() => setShowPhys(!showPhys)} color="#F59E0B" label="신체 스트레스 점수" />
+      <div className="mr-[19px]"><ToggleSwitch active={showPsych} onToggle={() => setShowPsych(!showPsych)} color="#A78BFA" label="Perceived stress score"/></div>
+      <ToggleSwitch active={showPhys} onToggle={() => setShowPhys(!showPhys)} color="#F59E0B" label="Physiological stress score" />
     </div>
   </div>
 );
@@ -57,8 +57,10 @@ const Header: React.FC<{
 const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate }) => {
   const today = new Date();
 
-  const [year, setYear] = useState<number>(selectedDate?.getFullYear() ?? today.getFullYear());
-  const [month, setMonth] = useState<number>(selectedDate?.getMonth() ?? today.getMonth());
+  const [year, setYear] = useState<number>(selectedDate?.getFullYear() ?? 2025);
+  const [month, setMonth] = useState<number>(selectedDate?.getMonth() ?? 7);
+  // const [year, setYear] = useState<number>(selectedDate?.getFullYear() ?? today.getFullYear());
+  // const [month, setMonth] = useState<number>(selectedDate?.getMonth() ?? today.getMonth());
   const [firstDay, setFirstDay] = useState<number>(new Date(year, month, 1).getDay());
   const [dates, setDates] = useState<Array<Date>>([]);
 
@@ -121,11 +123,8 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
 
   const getDateStyle = (date: Date) => {
     if (date.getMonth() !== month) return { className: 'text-gray-400', style: { backgroundColor: '#F3F4F6' } };
-    const fixedDate = new Date(date)
-    fixedDate.setDate(fixedDate.getDate() + 1)
-
-    // const key = date.toISOString().slice(0, 10);
-    const key = fixedDate.toISOString().slice(0, 10);
+    // Use local date string for key to match useStressData
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const data = getForDate(key) ?? { psych: -1, phys: -1 };
     const psych = data.psych;
     const phys = data.phys;
@@ -186,7 +185,7 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
   const WeekLabels = () => (
     // <div className="grid [grid-template-columns:repeat(7,minmax(0,1fr))_1.6fr] gap-0.5 mt-6"></div>
     <div className="grid grid-cols-7 gap-0.5 mt-3">
-      {['일', '월', '화', '수', '목', '금', '토'].map((day, i) => (
+      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
         <div
           key={day + i}
           className="font-medium text-[#888] text-center text-[15px] mb-1"
@@ -200,7 +199,7 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
 
   return (
     // <div className="w-[658px] mx-auto font-sans p-6">
-    <div className="w-[338px] mx-auto font-sans p-6">
+    <div className="w-[338px] mx-auto font-sans py-6 pl-0 pr-6">
       <Header showPsych={showPsych} setShowPsych={setShowPsych} showPhys={showPhys} setShowPhys={setShowPhys} />
       <MonthNavigation />
       <WeekLabels />
@@ -209,7 +208,7 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
         {splitWeeks(dates).map((week, w_idx) => (
           <React.Fragment key={`week-${w_idx}`}>
             {week.map((date, idx) => {
-              const base = 'w-[40px] h-[40px] first:rounded-tl-xl nth-7:rounded-tr-xl nth-36:rounded-bl-xl last:rounded-br-xl text-center leading-[40px] mx-auto hover:font-bold';
+              const base = 'w-[44px] h-[40px] first:rounded-tl-xl nth-7:rounded-tr-xl nth-36:rounded-bl-xl last:rounded-br-xl text-center leading-[40px] mx-auto hover:font-bold';
               const ds = getDateStyle(date);
               return (
                 <button

@@ -1,7 +1,8 @@
-import { CONTENT } from "@/data/stressType";
+import { CONTENT } from "@/data/stressTime";
 import Barchart from "./Barchart";
 import { useState } from "react";
 import DiffCalendar from "./DiffCalendar";
+import DiffTimeline from "./DiffTimeline";
 
 const DeltaPage: React.FC<{ pid: string }> = ({ pid }) => {
   // const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -19,12 +20,12 @@ const DeltaPage: React.FC<{ pid: string }> = ({ pid }) => {
 
           {/* Timeline */}
           <div className="flex-1">
-            {/* {selectedDate && <Timeline selectedDate={selectedDate} pid={pid}/>} */}
+            {selectedDate && <DiffTimeline selectedDate={selectedDate} pid={pid} />}
           </div>
         </div>
       </div>
       <div>
-        <div className="font-semibold text-3xl">지난 한 달 동안, 당신은 왜 스트레스를 받았나요?</div>
+        <div className="font-semibold text-3xl mt-12">Over the past month, did stress-relief interventions actually help?</div>
         <div className="flex flex-col gap-8 items-start">
           {/* Barchart */}
           {pid && <Barchart pid={pid} />}

@@ -1,9 +1,17 @@
 export const CONTENT = {
-    TITLE: "지난 한 달 동안, 당신은 어떻게 스트레스를 해소했나요?",
+    TITLE: "Over the past month, how did you relieve stress?",
     BODY_1: {
-        TITLE: "나의 인지 스트레스를 저감시킨 완화 활동",
+        TITLE: [
+            { txt: "My ", color: '' },
+            { txt: "perceived stress", color: 'text-violet-500' },
+            { txt: "-relieving interventions", color: '' },
+        ]
     },
     BODY_2: {
-        TITLE: "나의 신체 스트레스를 저감시킨 완화 활동",
+        TITLE: [
+            { txt: "My ", color: '' },
+            { txt: "physiological stress", color: 'text-orange-500' },
+            { txt: "-relieving interventions", color: '' },
+        ]
     },
 }

@@ -12,6 +12,7 @@
     "apexcharts": "^5.3.4",
     "data-fns": "^1.1.0",
     "date-fns": "^4.1.0",
+    "es-hangul": "^2.3.5",
     "next": "15.4.6",
     "papaparse": "^5.5.3",
     "react": "19.1.0",

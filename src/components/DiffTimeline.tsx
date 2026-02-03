@@ -1,6 +1,7 @@
 import React from 'react';
 import useStressData from '@/hooks/useStressData';
 import { stressor_list, STRESSORS } from '@/data/stressWhy';
+import useStressDiffData from '@/hooks/useStressDiffData';
 
 // Props reuse shared StressDataPoint type from data module
 interface TimelineProps {
@@ -29,7 +30,7 @@ const STRESS_COLORS = {
   },
 } as const;
 
-// const ADDITIONAL_ITEMS = ['CO2', '온도', '습도', '콜 유형', '수면의 질', '각성/흥분 정도', '정서적 긍부정 정도', '피로도', '감정을 숨기려는 노력'];
+const ADDITIONAL_ITEMS = ['CO2', '온도', '습도', '콜 유형', '수면의 질', '각성/흥분 정도', '정서적 긍부정 정도', '피로도', '감정을 숨기려는 노력'];
 
 const LEGEND_DATA = {
   internal: [
@@ -98,7 +99,7 @@ const LegendGroup: React.FC<{ items: typeof LEGEND_DATA.internal }> = ({ items }
 );
 
 const Legend: React.FC = () => (
-  <div className="mb-6 space-y-4">
+  <div className="mb-24 space-y-4">
     <div className="flex justify-end pr-3">
       <div className="flex gap-8 text-xs">
         <LegendGroup items={LEGEND_DATA.internal} />
@@ -126,9 +127,15 @@ const TimelineChart: React.FC<{
   }>;
   callLog: Array<string>;
   interventions: Array<{ name: string; time: string; }>;
-}> = ({ pid, buckets, callLog, interventions }) => {
+  psychDiff: Array<number>;
+  physDiff: Array<number>;
+}> = ({ pid, buckets, callLog, interventions, psychDiff, physDiff }) => {
   const colPct = 100 / buckets.length;
   const [tooltip, setTooltip] = React.useState<null | { leftPercent: number; bucketIdx: number }>(null);
+  const [flag, setFlag] = React.useState<null | { leftPercent: number; bucketIdx: number }>(null);
+
+  console.log(psychDiff)
+  console.log(physDiff)
 
   const openTooltip = (idx: number) => {
     const leftPercent = (idx + 0.5) * colPct;
@@ -155,13 +162,12 @@ const TimelineChart: React.FC<{
     "나 잘했지?": "I Did Well, Right?",
     "지금, 나 때문일까?": "Is It Because of Me?",
   };
-
   return (
     <>
       <div className="relative w-full" onClick={(e) => { e.stopPropagation(); }}>
         {/* Row labels */}
         <div className="absolute left-0 top-0 bottom-8 flex flex-col justify-between w-28 pr-4 my-12">
-          <div className="font-medium text-gray-700 text-center leading-tight">
+           <div className="font-medium text-gray-700 text-center leading-tight">
             <div className="font-bold text-purple-600">Perceived stress</div>
           </div>
           <div className="text-center text-sm">Call record</div>
@@ -224,9 +230,10 @@ const TimelineChart: React.FC<{
                           const tI = parseTime(iv.time);
                           if (Number.isNaN(tI)) return null;
                           const leftPctI = Math.min(100, Math.max(0, ((tI - timelineStart) / span) * 100));
+                          const isHovered = flag && flag.bucketIdx === j;
                           return (
                             <React.Fragment key={`iv-${j}`}>
-                              {/* vertical dashed line */}
+                              {/* vertical dashed line with hover handler */}
                               <div
                                 title={`${INTERVENTION_LABELS_EN[iv.name] ?? 'intervention'} ${formatTime(tI)}`}
                                 style={{
@@ -236,24 +243,66 @@ const TimelineChart: React.FC<{
                                   bottom: '-5%',
                                   borderLeft: '2px dashed #7ccf00',
                                   borderRight: '2px dashed #7ccf00',
-                                  transform: 'translateX(-1px)', // roughly center the 2px line
+                                  transform: 'translateX(-1px)',
                                   pointerEvents: 'auto',
                                   overflow: 'visible',
                                   zIndex: 15,
                                 }}
+                                onMouseEnter={() => setFlag({ leftPercent: leftPctI, bucketIdx: j })}
+                                onMouseLeave={() => setFlag(null)}
                               />
-                              {/* label under the line */}
-                              <div
-                                style={{
-                                  position: 'absolute',
-                                  left: `calc(${leftPctI}% )`,
-                                  top: '120%', // 위치는 필요시 조정
-                                  transform: 'translateX(-50%)',
-                                  pointerEvents: 'auto',
-                                  zIndex: 16,
-                                  whiteSpace: 'nowrap',
-                                }}
-                              />
+                              {/* show label only if hovered */}
+                              {isHovered && (
+                                <>
+                                  <div
+                                    style={{
+                                      position: 'absolute',
+                                      left: `calc(${leftPctI}% )`,
+                                      top: '-20%',
+                                      transform: 'translateX(-50%)',
+                                      pointerEvents: 'none',
+                                      zIndex: 16,
+                                      whiteSpace: 'nowrap',
+                                      display: 'flex',
+                                      gap: '12px',
+                                      alignItems: 'center',
+                                    }}
+                                  >
+                                    <span className='flex flex-col items-center text-purple-600'>
+                                      <span>Perceived</span>
+                                      {psychDiff[j] < 0 ? (
+                                        <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="8,12 2,4 14,4" fill="#a21caf" /></svg>
+                                      ) : (
+                                        <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="8,4 2,12 14,12" fill="#a21caf" /></svg>
+                                      )}
+                                    </span>
+                                    <span className='flex flex-col items-center text-yellow-600'>
+                                      <span>Physiological</span>
+                                      {physDiff[j] < 0 ? (
+                                        <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="8,12 2,4 14,4" fill="#eab308" /></svg>
+                                      ) : (
+                                        <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="8,4 2,12 14,12" fill="#eab308" /></svg>
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div
+                                    style={{
+                                      position: 'absolute',
+                                      left: `calc(${leftPctI}% )`,
+                                      top: '110%',
+                                      transform: 'translateX(-50%)',
+                                      pointerEvents: 'none',
+                                      zIndex: 16,
+                                      whiteSpace: 'nowrap',
+                                      fontWeight: 600,
+                                      fontSize: '14px',
+                                      color: '#333',
+                                    }}
+                                  >
+                                    {INTERVENTION_LABELS_EN[iv.name]}
+                                  </div>
+                                </>
+                              )}
                             </React.Fragment>
                           );
                         })}
@@ -340,7 +389,7 @@ const TimelineChart: React.FC<{
           <div onClick={(e) => e.stopPropagation()}>
             <div className="text-lg text-center font-bold mt-12 mb-6">Data collected {formatTime(b.startMs)} ~ {formatTime(b.endMs)}</div>
             <div className="text-gray-700 flex flex-row gap-12">
-              <div className="w-1/2">
+                            <div className="w-1/2">
                 <div className="font-bold">Stress data</div>
                 {b.avgInternal !== undefined && <div>Perceived stress score: {b.avgInternal} / 4</div>}
                 {b.avgPhysical !== undefined && <div>Physiological stress score: {b.avgPhysical} / 4</div>}
@@ -387,20 +436,22 @@ const TimelineChart: React.FC<{
   );
 };
 
-const Timeline: React.FC<TimelineProps> = ({
+const DiffTimeline: React.FC<TimelineProps> = ({
   pid,
   selectedDate,
 }) => {
   // load csv (filtered by pid)
-  console.log(selectedDate.toISOString())
-
-  const dateString = new Date(selectedDate.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
-
-  // const fixedDate = new Date(new Date(selectedDate).setDate(selectedDate.getDate() + 1))
+  const fixedDate = new Date(new Date(selectedDate).setDate(selectedDate.getDate() + 1))
   const { loading, getForDate, getRowsForDate, getInterventionsForDate } = useStressData('/data/feature_full.csv', pid);
-  const rows = getRowsForDate(dateString);
-  const interventions = getInterventionsForDate(dateString);
-  console.log(rows)
+  const rows = getRowsForDate(fixedDate.toISOString().slice(0, 10));
+  const interventions = getInterventionsForDate(fixedDate.toISOString().slice(0, 10));
+
+  const { getRowsForDate: getDiffRowsForDate } = useStressDiffData('/data/diff_full.csv', pid);
+  const diff_rows = getDiffRowsForDate(fixedDate.toISOString().slice(0, 10));
+  const psych_diff = diff_rows.map((row) => row.perceived_diff);
+  const phys_diff = diff_rows.map((row) => row.physio_diff);
+
+  console.log('diff_rows', diff_rows)
 
   // prepare buckets
   const buckets = React.useMemo(() => {
@@ -416,8 +467,8 @@ const Timeline: React.FC<TimelineProps> = ({
 
     if (!rows || rows.length === 0) {
       // create empty buckets across working-day heuristic
-      const dayStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 8, 0, 0).getTime() + 9 * 60 * 60 * 1000;
-      const dayEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 20, 0, 0).getTime() + 9 * 60 * 60 * 1000;
+      const dayStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 8, 0, 0).getTime();
+      const dayEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 18, 0, 0).getTime();
       const span = Math.max(1, dayEnd - dayStart);
       for (let i = 0; i < SLOTS_COUNT; i++) {
         const s = Math.floor(dayStart + (i * span) / SLOTS_COUNT);
@@ -435,8 +486,8 @@ const Timeline: React.FC<TimelineProps> = ({
     let startMs: number;
     let endMs: number;
     if (epochs.length === 0) {
-      startMs = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 8, 0, 0).getTime() + 9 * 60 * 60 * 1000;
-      endMs = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 20, 0, 0).getTime() + 9 * 60 * 60 * 1000;
+      startMs = new Date(fixedDate.getFullYear(), fixedDate.getMonth(), fixedDate.getDate(), 8, 0, 0).getTime();
+      endMs = new Date(fixedDate.getFullYear(), fixedDate.getMonth(), fixedDate.getDate(), 18, 0, 0).getTime();
     } else {
       const minE = Math.min(...epochs);
       const maxE = Math.max(...epochs);
@@ -593,9 +644,16 @@ const Timeline: React.FC<TimelineProps> = ({
     <div className="w-full p-6 mb-24">
       <Header date={selectedDate ?? new Date()} />
       <Legend />
-      <TimelineChart pid={pid} buckets={buckets} callLog={call_log} interventions={interventions} />
+      <TimelineChart
+        pid={pid}
+        buckets={buckets}
+        callLog={call_log}
+        interventions={interventions}
+        psychDiff={psych_diff}
+        physDiff={phys_diff}
+      />
     </div>
   );
 };
 
-export default Timeline;
+export default DiffTimeline;

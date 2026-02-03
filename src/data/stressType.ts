@@ -11,23 +11,23 @@ export type ContentType = {
 };
 
 export const CONTENT: ContentType = {
-    TITLE: "스트레스 유형 안내",
+    TITLE: "Guide to stress types",
     BODY_1: {
-        TITLE: "인지 스트레스",
+        TITLE: "perceived stress",
         DESCRIPTION: [
-            { TXT: '내가 "스트레스를 받고 있다"고 ', BOLD: false },
-            { TXT: '스스로 인식하는 정도', BOLD: true },
-            { TXT: '를 의미합니다. 같은 상황이라도 어떤 사람은 크게 스트레스로 느끼고, 다른 사람은 덜 느낄 수 있습니다. 주로 ', BOLD: false },
-            { TXT: '생각, 감정, 상황 해석', BOLD: true },
-            { TXT: '이 반영되며, 상담사님께서 제출해주신 설문 응답을 통해 기록됩니다.', BOLD: false }
+            { TXT: 'It refers to ', BOLD: false },
+            { TXT: 'how much you perceive yourself as "being under stress"', BOLD: true },
+            { TXT: '. Even in the same situation, one person may experience it as highly stressful while another may feel less so. It mainly reflects ', BOLD: false },
+            { TXT: 'thoughts, emotions, and interpretation of the situation', BOLD: true },
+            { TXT: ', and it is recorded through the survey responses you submit.', BOLD: false }
         ]
     },
     BODY_2: {
-        TITLE: "신체 스트레스",
+        TITLE: "physiological stress",
         DESCRIPTION: [
-            { TXT: '내 몸이 실제로 반응한 생리적인 긴장 수준, 즉 ', BOLD: false },
-            { TXT: '내 몸이 받은 부담', BOLD: true },
-            { TXT: '을 나타냅니다. 심박수 변화, 피부 전도 반응, 호흡 패턴 등에서 계산되며, 내가 자각하지 못하더라도 몸은 스트레스를 받고 있을 수 있습니다. 이 대시보드에서는 상담사님께서 착용하신 갤럭시 워치에서 수집된 PPG(광용적맥파) 데이터로 심박수 변화를 계산하여 신체 스트레스를 보여줍니다.', BOLD: false }
+            { TXT: 'The level of physiological arousal your body actually shows—i.e., ', BOLD: false },
+            { TXT: 'the burden on your body', BOLD: true },
+            { TXT: '. It is computed from changes in heart rate, electrodermal activity, and breathing patterns. Even if you do not consciously notice it, your body may still be under stress. In this dashboard, physiological stress is shown using heart-rate changes collected by your Galaxy Watch.', BOLD: false }
         ]
     }
 };

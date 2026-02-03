@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import type { ApexOptions } from 'apexcharts';
-import { NAMES, STRESSORS, ENV, CONTEXT, CONTENT, DAILY_CONTEXT } from '@/data/stressWhy';
+import { NAMES, CONTENT, labelMap } from '@/data/stressWhy';
 import useCorrelationData, { TreemapCategory, TreemapGroup } from '@/hooks/useCorrelationData';
 import TreeMapInfo from './report/TreeMapReport';
 
@@ -25,18 +25,10 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
   const getSeries = (topType: TreemapCategory, type: 'psychological' | 'physiological'): ApexAxisChartSeries => {
     const raw = groupedByType[topType]?.[type] ?? [];
     // clone groups and map each datum.x using appropriate label map
-    const labelMap = (() => {
-      if (topType === 'stressor') return STRESSORS;
-      if (topType === 'env') return ENV;
-      if (topType === 'context') return CONTEXT;
-      if (topType === 'daily_context') return DAILY_CONTEXT;
-      return undefined;
-    })();
-
     const result = raw.map((group: TreemapGroup) => ({
       name: group.name,
       data: group.data.map(datum => {
-        const mapped = labelMap && (labelMap as any)[datum.x] ? (labelMap as any)[datum.x] : datum.x;
+        const mapped = labelMap(datum.x);
         return { x: mapped, y: datum.y, raw: datum.raw, fill: { type: 'image', opacity: 0, pattern: { style: 'verticalLines' } } };
       })
     }))
@@ -66,7 +58,7 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
       tooltip: {
         y: {
           formatter: function (value) {
-            return value.toFixed(2) + '점'
+            return value.toFixed(2) + ''
           }
         }
       },
@@ -86,7 +78,9 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
     <div className="w-full my-4 flex gap-20 justify-between">
       {/* 인지 스트레스 */}
       <div className="w-1/2">
-        <div className="font-semibold text-2xl mb-4">{CONTENT.BODY_1.TITLE}</div>
+        <div className="font-semibold text-2xl mb-4">{CONTENT.BODY_1.TITLE.map((part, index) => (
+          <span key={index} className={part.color}>{part.txt}</span>
+        ))}</div>
         {CONTENT.BODY_1.CATEGORY.map((item, psy_idx) => (
           <div className="flex flex-col" key={item.NAME}>
             <div className="flex flex-row gap-4 justify-start">
@@ -95,13 +89,15 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
             </div>
           </div>
         ))}
-        <div className="mt-4 w-full">
+        <div className="mt-8 w-full">
           <TreeMapInfo pid={pid} type="psychological" />
         </div>
       </div>
       {/* 신체 스트레스 */}
       <div className="w-1/2">
-        <div className="font-semibold text-2xl mb-4">{CONTENT.BODY_2.TITLE}</div>
+        <div className="font-semibold text-2xl mb-4">{CONTENT.BODY_2.TITLE.map((part, index) => (
+          <span key={index} className={part.color}>{part.txt}</span>
+        ))}</div>
         {CONTENT.BODY_2.CATEGORY.map((item, phy_idx) => (
           <div className="flex flex-col" key={item.NAME}>
             <div className="flex flex-row gap-4 justify-start">
@@ -110,7 +106,7 @@ const BasicTreemap: React.FC<{ pid: string }> = ({ pid }) => {
             </div>
           </div>
         ))}
-        <div className="mt-4 w-full">
+        <div className="mt-8 w-full">
           <TreeMapInfo pid={pid} type="physiological" />
         </div>
       </div>

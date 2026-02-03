@@ -11,9 +11,9 @@ export type ContentType = {
 };
 
 export const CONTENT: ContentType = {
-    TITLE: "지난 한 달 동안, 당신은 언제 스트레스를 받았나요?",
+    TITLE: "Over the past month, when did you experience stress?",
     BODY_1: {
-        TITLE: "일간 스트레스 변화 캘린더",
+        TITLE: "Daily stress trend calendar",
         // DESCRIPTION: [
         //     { TXT: '내가 "스트레스를 받고 있다"고 ', BOLD: false },
         //     { TXT: '스스로 인식하는 정도', BOLD: true },
