@@ -5,17 +5,14 @@ export type ContentType = {
   BODY_1: {
     TITLE: { txt: string, color: string }[];
     CATEGORY: Array<{ NAME: string; COLOR: string }>;
-    // DESCRIPTION: Array<{ TXT: string; BOLD: boolean }>;
   };
   BODY_2: {
     TITLE: { txt: string, color: string }[];
     CATEGORY: Array<{ NAME: string; COLOR: string }>;
-    // DESCRIPTION: Array<{ TXT: string; BOLD: boolean }>;
   };
 };
 
 export const COLORS: string[] = ['#A93F55', '#52B12C', '#33A1FD', '#1c1e7a'];
-// export const COLORS: string[] = ['#A93F55', '#525252', '#33A1FD', '#1c1e7a'];
 export const NAMES: TreemapCategory[] = ['stressor', 'env', 'context', 'daily_context'];
 
 export const CONTENT: ContentType = {
@@ -32,13 +29,6 @@ export const CONTENT: ContentType = {
       { NAME: "Work context", COLOR: COLORS[2] },
       { NAME: "Pre-shift", COLOR: COLORS[3] }
     ]
-    // DESCRIPTION: [
-    //     { TXT: '내가 "스트레스를 받고 있다"고 ', BOLD: false },
-    //     { TXT: '스스로 인식하는 정도', BOLD: true },
-    //     { TXT: '를 의미합니다. 같은 상황이라도 어떤 사람은 크게 스트레스로 느끼고, 다른 사람은 덜 느낄 수 있습니다. 주로 ', BOLD: false },
-    //     { TXT: '생각, 감정, 상황 해석', BOLD: true },
-    //     { TXT: '이 반영되며, 상담사님께서 제출해주신 설문 응답을 통해 기록됩니다.', BOLD: false }
-    // ]
   },
   BODY_2: {
     TITLE: [
@@ -52,11 +42,6 @@ export const CONTENT: ContentType = {
       { NAME: "Work context", COLOR: COLORS[2] },
       { NAME: "Pre-shift", COLOR: COLORS[3] }
     ]
-    // DESCRIPTION: [
-    //     { TXT: '내 몸이 실제로 반응한 생리적인 긴장 수준, 즉 ', BOLD: false },
-    //     { TXT: '내 몸이 받은 부담', BOLD: true },
-    //     { TXT: '을 나타냅니다. 심박수 변화, 피부 전도 반응, 호흡 패턴 등에서 계산되며, 내가 자각하지 못하더라도 몸은 스트레스를 받고 있을 수 있습니다. 이 대시보드에서는 상담사님께서 착용하신 갤럭시 워치에서 수집된 PPG(광용적맥파) 데이터로 심박수 변화를 계산하여 신체 스트레스를 보여줍니다.', BOLD: false }
-    // ]
   }
 };
 

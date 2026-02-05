@@ -2,91 +2,29 @@ import React from 'react';
 import useStressData from '@/hooks/useStressData';
 import { stressor_list, STRESSORS } from '@/data/stressWhy';
 import type { TimelineProps } from '@/types';
-import { GRID_CONSTANTS, STRESS_COLORS, LEGEND_DATA } from '@/constants/theme';
+import { GRID_CONSTANTS, STRESS_COLORS } from '@/constants/theme';
+import { formatTime, getIsoDateKey } from '@/utils/timelineUtils';
+import { buildTimelineBuckets, TimelineBucket } from '@/utils/timelineBuckets';
+import TimelineHeader from './timeline/TimelineHeader';
+import TimelineLegend from './timeline/TimelineLegend';
+import TimelineTooltip from './timeline/TimelineTooltip';
+import TimelineOverlays from './timeline/TimelineOverlays';
+import TimelineTimeLabels from './timeline/TimelineTimeLabels';
 
 // Constants
 const SLOTS_COUNT = GRID_CONSTANTS.SLOTS_COUNT;
 const GRID_WIDTH_PCT = GRID_CONSTANTS.WIDTH_PCT;
 
-// small helpers (duplicated from hook for per-bar processing)
-const mean = (arr: number[]) => arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : NaN;
-const isValid = (v: number) => !Number.isNaN(v);
-const normalize = (v: number, min: number, max: number) => {
-  if (!isValid(v) || !isValid(min) || !isValid(max) || max === min) return NaN;
-  return (v - min) / (max - min);
-};
-const rawToLevel = (x: number) => {
-  if (!isValid(x)) return 0;
-  return Math.max(0, Math.min(4, Math.round(x * 4)));
-};
-const getRange = (vals: number[]) => {
-  const clean = vals.filter(isValid);
-  if (!clean.length) return { min: NaN, max: NaN };
-  return { min: Math.min(...clean), max: Math.max(...clean) };
-};
-
-// helper: 포맷 HH:MM (로컬)
-const pad2 = (n: number) => String(n).padStart(2, '0');
-const formatTime = (ms: number) => {
-  if (Number.isNaN(ms)) return '';
-  const d = new Date(ms - 9 * 60 * 60 * 1000);
-  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-};
-
 const getStressColor = (level: number, type: 'internal' | 'physical'): string => {
   return STRESS_COLORS[type][level as keyof typeof STRESS_COLORS[typeof type]] || 'bg-gray-100';
 };
 
-const month_map = (m: number) => { if (m == 7) return "July"; else if (m == 8) return "August"; }
-
-// UI components unchanged (Header, LegendGroup, Legend)
-const Header: React.FC<{ date: Date }> = ({ date }) => (
-  <div className="mb-6">
-    <h2 className="text-2xl font-bold text-gray-800 mb-2">Stress on {month_map(date.getMonth() + 1)} {date.getDate()}, {date.getFullYear()}</h2>
-  </div>
-);
-
-const LegendGroup: React.FC<{ items: typeof LEGEND_DATA.internal }> = ({ items }) => (
-  <div className="flex gap-4">
-    {items.map((item) => (
-      <div key={item.level} className="flex items-center gap-1">
-        <div className={`w-3 h-3 ${item.color} rounded`}></div>
-        <span>{item.label}</span>
-      </div>
-    ))}
-  </div>
-);
-
-const Legend: React.FC = () => (
-  <div className="mb-6 space-y-4">
-    <div className="flex justify-end pr-3">
-      <div className="flex gap-8 text-xs">
-        <LegendGroup items={LEGEND_DATA.internal} />
-      </div>
-    </div>
-    <div className="flex justify-end pr-3">
-      <div className="flex gap-8 text-xs">
-        <LegendGroup items={LEGEND_DATA.physical} />
-      </div>
-    </div>
-  </div>
-);
-
-// TimelineChart now receives bar buckets (30) and aggregated summaries per bucket
+// TimelineChart receives bar buckets (30) and aggregated summaries per bucket
 const TimelineChart: React.FC<{
-  pid: string;
-  buckets: Array<{
-    idx: number;
-    startMs: number;
-    endMs: number;
-    rows: Array<Record<string, any>>;
-    avgInternal?: number;
-    avgPhysical?: number;
-    summary: Record<string, any>;
-  }>;
+  buckets: TimelineBucket[];
   callLog: Array<string>;
   interventions: Array<{ name: string; time: string; }>;
-}> = ({ pid, buckets, callLog, interventions }) => {
+}> = ({ buckets, callLog, interventions }) => {
   const colPct = 100 / buckets.length;
   const [tooltip, setTooltip] = React.useState<null | { leftPercent: number; bucketIdx: number }>(null);
 
@@ -105,17 +43,6 @@ const TimelineChart: React.FC<{
   }, []);
 
   const colTemplate = `repeat(${buckets.length}, minmax(0, 1fr))`;
-  const INTERVENTION_LABELS_EN: Record<string, string> = {
-    "스트레칭": "Stretching",
-    "당 충전하기": "Sugar Boost",
-    "지금 듣고 싶은 말": "Words I Need Right Now",
-    "호흡하기": "Deep Breathing",
-    "나를 지켜줘": "Protect Me",
-    "화 먹는 요정": "Anger-Eating Fairy",
-    "나 잘했지?": "I Did Well, Right?",
-    "지금, 나 때문일까?": "Is It Because of Me?",
-  };
-
   return (
     <>
       <div className="relative w-full" onClick={(e) => { e.stopPropagation(); }}>
@@ -158,92 +85,7 @@ const TimelineChart: React.FC<{
                 {/* 콜 응대 표시: 버킷 정렬에 무관하게 시간 위치에 작은 점으로 렌더 */}
                 <div className="absolute w-[734px] h-[2px] bg-gray-700" style={{ top: '46%' }}></div>
                 <div className="absolute inset-0 pointer-events-none">
-                  {(() => {
-                    if (!buckets || buckets.length === 0 || (!callLog || !callLog.length) && (!interventions || !interventions.length)) return null;
-                    const timelineStart = buckets[0].startMs;
-                    const timelineEnd = buckets[buckets.length - 1].endMs;
-                    const span = Math.max(1, timelineEnd - timelineStart);
-
-                    const DOT_HALF_PX = 6;
-
-                    const parseTime = (v: unknown): number => {
-                      if (typeof v === 'number') return v < 1e12 ? v * 1000 : v;
-                      if (typeof v === 'string') {
-                        const n = Number(v);
-                        if (!Number.isNaN(n)) return n < 1e12 ? n * 1000 : n;
-                        const p = Date.parse(v);
-                        return Number.isNaN(p) ? NaN : p;
-                      }
-                      return NaN;
-                    };
-
-                    return (
-                      <>
-                        {/* interventions: 시간 위치에 수직 점선 표시 */}
-                        {interventions && interventions.length > 0 && interventions.map((iv, j) => {
-                          const tI = parseTime(iv.time);
-                          if (Number.isNaN(tI)) return null;
-                          const leftPctI = Math.min(100, Math.max(0, ((tI - timelineStart) / span) * 100));
-                          return (
-                            <React.Fragment key={`iv-${j}`}>
-                              {/* vertical dashed line */}
-                              <div
-                                title={`${INTERVENTION_LABELS_EN[iv.name] ?? 'intervention'} ${formatTime(tI)}`}
-                                style={{
-                                  position: 'absolute',
-                                  left: `calc(${leftPctI}% )`,
-                                  top: '-5%',
-                                  bottom: '-5%',
-                                  borderLeft: '2px dashed #7ccf00',
-                                  borderRight: '2px dashed #7ccf00',
-                                  transform: 'translateX(-1px)', // roughly center the 2px line
-                                  pointerEvents: 'auto',
-                                  overflow: 'visible',
-                                  zIndex: 15,
-                                }}
-                              />
-                              {/* label under the line */}
-                              <div
-                                style={{
-                                  position: 'absolute',
-                                  left: `calc(${leftPctI}% )`,
-                                  top: '120%', // 위치는 필요시 조정
-                                  transform: 'translateX(-50%)',
-                                  pointerEvents: 'auto',
-                                  zIndex: 16,
-                                  whiteSpace: 'nowrap',
-                                }}
-                              />
-                            </React.Fragment>
-                          );
-                        })}
-
-                        {/* call dots */}
-                        {callLog && callLog.length > 0 && callLog.map((callTime, i) => {
-                          const t = parseTime(callTime);
-                          if (Number.isNaN(t)) return null;
-                          const leftPct = Math.min(100, Math.max(0, ((t - timelineStart) / span) * 100));
-                          return (
-                            <div
-                              key={`call-dot-${i}`}
-                              title={`콜 ${formatTime(t)}`}
-                              style={{
-                                position: 'absolute',
-                                left: `calc(${leftPct}% - ${DOT_HALF_PX}px)`,
-                                top: '46%',
-                                transform: 'translateY(-50%)',
-                                pointerEvents: 'auto',
-                                overflow: 'visible',
-                                zIndex: 10,
-                              }}
-                            >
-                              <div className="w-3 h-3 bg-gray-700 rounded-sm" />
-                            </div>
-                          );
-                        })}
-                      </>
-                    );
-                  })()}
+                  <TimelineOverlays buckets={buckets} callLog={callLog} interventions={interventions} />
                 </div>
 
                 <div className="grid gap-2 mt-6" style={{ gridTemplateColumns: colTemplate }}>
@@ -265,25 +107,7 @@ const TimelineChart: React.FC<{
                 </div>
 
                 {/* Time labels below (approx. show some labels) */}
-                <div
-                  className="grid gap-0 mt-2 text-xs font-medium text-gray-600"
-                  style={{
-                    gridTemplateColumns: colTemplate,
-                    // 오른쪽 끝 라벨가 잘리지 않도록 컬럼 폭의 절반만큼 오른쪽 패딩 추가
-                    paddingRight: `${colPct / 4}%`,
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  {buckets.map((b, i) => {
-                    // show label every Nth bucket to avoid crowd
-                    const every = Math.max(1, Math.floor(buckets.length / 6));
-                    return (
-                      <div key={`lbl-${i}`} className="text-center font-bold">
-                        {(i % every === 0 || i === buckets.length - 1) ? formatTime(b.startMs) : ''}
-                      </div>
-                    );
-                  })}
-                </div>
+                <TimelineTimeLabels buckets={buckets} />
               </div>
             </div>
 
@@ -292,57 +116,7 @@ const TimelineChart: React.FC<{
         </div>
       </div>
       {/* Tooltip */}
-      {tooltip && (() => {
-        const b = buckets[tooltip.bucketIdx];
-        const summary = b?.summary ?? {};
-
-        return (
-          <div onClick={(e) => e.stopPropagation()}>
-            <div className="text-lg text-center font-bold mt-12 mb-6">Data collected {formatTime(b.startMs)} ~ {formatTime(b.endMs)}</div>
-            <div className="text-gray-700 flex flex-row gap-12">
-              <div className="w-1/2">
-                <div className="font-bold">Stress data</div>
-                {b.avgInternal !== undefined && <div>Perceived stress score: {b.avgInternal} / 4</div>}
-                {b.avgPhysical !== undefined && <div>Physiological stress score: {b.avgPhysical} / 4</div>}
-                <div className="h-3" />
-
-                {summary.stressor?.length > 0 && <div className="font-bold">Stressor</div>}
-                {summary.stressor?.length > 0 && <div className="h-auto">{summary.stressor.join(', ')}</div>}
-                {summary.stressor?.length > 0 && <div className="h-3" />}
-
-                <div className="font-bold">Pre-shift data</div>
-                {summary.daily_arousal !== undefined && <div>Emotional arousal: {summary.daily_arousal.toFixed(2)} / 5</div>}
-                {summary.daily_valence !== undefined && <div>Emotional valence: {summary.daily_valence.toFixed(2)} / 5</div>}
-                {summary.daily_tiredness !== undefined && <div>Fatigue: {summary.daily_tiredness.toFixed(2)} / 5</div>}
-                {summary.daily_general_health !== undefined && <div>General health: {summary.daily_general_health.toFixed(2)} / 5</div>}
-                {summary.daily_general_sleep !== undefined && <div>Sleep quality: {summary.daily_general_sleep.toFixed(2)} / 5</div>}
-              </div>
-              <div className="w-1/2">
-                <div className="font-bold">Environment data</div>
-                {summary.humidity_mean !== undefined && <div>Humidity: {summary.humidity_mean.toFixed(2)}%</div>}
-                {summary.co2_mean !== undefined && <div>CO2 concentration: {summary.co2_mean.toFixed(1)} ppm</div>}
-                {summary.tvoc_mean !== undefined && <div>Air quality: {summary.tvoc_mean.toFixed(1)}ppm</div>}
-                {summary.temperature_mean !== undefined && <div>Indoor temperature: {summary.temperature_mean.toFixed(2)}°C</div>}
-                <div className="h-3" />
-
-                <div className="font-bold">Work context data</div>
-                {summary.workload !== undefined && <div>Workload: {summary.workload.toFixed(2)} / 5</div>}
-                {summary.arousal !== undefined && <div>Emotional arousal: {summary.arousal.toFixed(2)} / 5</div>}
-                {summary.valence !== undefined && <div>Emotional valence: {summary.valence.toFixed(2)} / 5</div>}
-                {summary.tiredness !== undefined && <div>Fatigue: {summary.tiredness.toFixed(2)} / 5</div>}
-                {summary.surface_acting !== undefined && <div>Surface acting: {summary.surface_acting.toFixed(2)} / 5</div>}
-                <div>Previous call type: {summary.call_type_angry ? 'Complaint' : 'General'}</div>
-                {/* <div>Stressor count (sum flags): {summary.stressor_sum ?? 0}</div> */}
-                {summary.steps !== undefined && <div>Average steps: {Math.round(summary.steps)}</div>}
-                {summary.skintemp !== undefined && <div>Average skin temperature: {summary.skintemp.toFixed(2)}°C</div>}
-                {summary.hr_minmax !== undefined && <div>Average heart rate: {summary.hr_mean.toFixed(2)} bpm</div>}
-                {summary.acc_mean !== undefined && <div>Average accelerometer: {summary.acc_mean.toFixed(3)} m/s²</div>}
-                <div className="h-3" />
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      {tooltip && <TimelineTooltip bucket={buckets[tooltip.bucketIdx]} />}
     </>
   );
 };
@@ -352,205 +126,35 @@ const Timeline: React.FC<TimelineProps> = ({
   selectedDate,
 }) => {
   // load csv (filtered by pid)
-  const dateString = new Date(selectedDate.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const dateString = getIsoDateKey(selectedDate, { addHours: 9 });
 
   // const fixedDate = new Date(new Date(selectedDate).setDate(selectedDate.getDate() + 1))
-  const { loading, getForDate, getRowsForDate, getInterventionsForDate } = useStressData('/data/feature_full.csv', pid);
+  const { getRowsForDate, getInterventionsForDate } = useStressData('/data/feature_full.csv', pid);
   const rows = getRowsForDate(dateString);
   const interventions = getInterventionsForDate(dateString);
 
   // prepare buckets
-  const buckets = React.useMemo(() => {
-    const out: Array<{
-      idx: number;
-      startMs: number;
-      endMs: number;
-      rows: Array<Record<string, any>>;
-      avgInternal?: number;
-      avgPhysical?: number;
-      summary: Record<string, any>;
-    }> = [];
-
-    if (!rows || rows.length === 0) {
-      // create empty buckets across working-day heuristic
-      const dayStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 8, 0, 0).getTime() + 9 * 60 * 60 * 1000;
-      const dayEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 20, 0, 0).getTime() + 9 * 60 * 60 * 1000;
-      const span = Math.max(1, dayEnd - dayStart);
-      for (let i = 0; i < SLOTS_COUNT; i++) {
-        const s = Math.floor(dayStart + (i * span) / SLOTS_COUNT);
-        const e = Math.floor(dayStart + ((i + 1) * span) / SLOTS_COUNT);
-        out.push({ idx: i, startMs: s, endMs: e, rows: [], summary: {} });
-      }
-      return out;
-    }
-
-    // collect candidate epochs from common fields (preserve local ms)
-    const epochs = rows
-      .map(r => Date.parse(r.isoTime));
-
-    // fallback to working-day heuristic when no timestamps present
-    let startMs: number;
-    let endMs: number;
-    if (epochs.length === 0) {
-      startMs = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 8, 0, 0).getTime() + 9 * 60 * 60 * 1000;
-      endMs = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 20, 0, 0).getTime() + 9 * 60 * 60 * 1000;
-    } else {
-      const minE = Math.min(...epochs);
-      const maxE = Math.max(...epochs);
-      startMs = minE;
-      endMs = maxE;
-    }
-    const span = Math.max(1, endMs - startMs);
-
-    // create empty buckets (evenly split timeline [startMs, endMs])
-    for (let i = 0; i < SLOTS_COUNT; i++) {
-      const s = Math.floor(startMs + (i * span) / SLOTS_COUNT);
-      const e = Math.floor(startMs + ((i + 1) * span) / SLOTS_COUNT);
-      out.push({ idx: i, startMs: s, endMs: e, rows: [], summary: {} });
-    }
-
-    // place rows into buckets (defensive clamping)
-    for (const r of rows) {
-      const epoch = Date.parse(r.isoTime);
-      if (Number.isNaN(epoch)) continue;
-
-      const rawIdx = Math.floor(((epoch - startMs) / span) * SLOTS_COUNT);
-      const idx = Math.min(Math.max(rawIdx, 0), out.length - 1);
-      // defensive ensure
-      if (!out[idx]) {
-        out[Math.max(0, Math.min(out.length - 1, idx))].rows.push(r);
-      } else {
-        out[idx].rows.push(r);
-      }
-    }
-
-    // compute ranges for physical normalization using only this date's rows
-    const hrVals = rows.map(r => Number(r.hr_mean)).filter(v => !Number.isNaN(v));
-    const rmssdVals = rows.map(r => Number(r.rmssd)).filter(v => !Number.isNaN(v));
-    const accVals = rows.map(r => Number(r.acc_mean)).filter(v => !Number.isNaN(v));
-    const hrRange = getRange(hrVals);
-    const rmssdRange = getRange(rmssdVals);
-    const accRange = getRange(accVals);
-
-    // aggregate per bucket
-    for (const b of out) {
-      const internalVals: number[] = [];
-      // rmssd 기반으로만 신체 스트레스 계산
-      const rmssdBucketVals: number[] = [];
-
-      // summary accumulators
-      const summaryAcc: Record<string, any> = {
-        workload: [] as number[],
-        arousal: [] as number[],
-        valence: [] as number[],
-        tiredness: [] as number[],
-        surface_acting: [] as number[],
-        call_type_angry: 0,
-        stressor_sum: 0,
-        stressor: [] as string[],
-        steps: [] as number[],
-        skintemp: [] as number[],
-        hr_mean: [] as number[],
-        acc_mean: [] as number[],
-        humidity_mean: [] as number[],
-        co2_mean: [] as number[],
-        tvoc_mean: [] as number[],
-        temperature_mean: [] as number[],
-        daily_arousal: [] as number[],
-        daily_valence: [] as number[],
-        daily_tiredness: [] as number[],
-        daily_general_health: [] as number[],
-        daily_general_sleep: [] as number[],
-      };
-
-      for (const r of b.rows) {
-        // internal stress
-        const s = Number(r.stress ?? NaN);
-        if (!Number.isNaN(s)) internalVals.push(Math.max(0, Math.min(4, s)));
-
-        // 신체 스트레스는 rmssd(IBI 기반)만 사용: 버킷별 rmssd 평균을 취함
-        const rmssd = Number(r.rmssd ?? NaN);
-        if (!Number.isNaN(rmssd)) rmssdBucketVals.push(rmssd);
-
-        // accumulate summaries (exclude psych/phys)
-        const pushIfNum = (k: string, v: any) => { const n = Number(v); if (!Number.isNaN(n)) (summaryAcc[k] as number[]).push(n); };
-        pushIfNum('workload', r.workload);
-        pushIfNum('arousal', r.arousal);
-        pushIfNum('valence', r.valence);
-        pushIfNum('tiredness', r.tiredness ?? r.daily_tiredness);
-        pushIfNum('surface_acting', r.surface_acting);
-        if (r.call_type_angry) summaryAcc.call_type_angry += 1;
-        // stressor flags sum
-        const stressorFlags = [
-          'stressor_lack_ability', 'stressor_difficult_work', 'stressor_eval_pressure', 'stressor_work_bad', 'stressor_hard_communication',
-          'stressor_rude_customer', 'stressor_time_pressure', 'stressor_noise', 'stressor_peer_conflict', 'stressor_other'
-        ];
-        for (const f of stressorFlags) {
-          if (r[f]) {
-            summaryAcc.stressor_sum += 1;
-            summaryAcc.stressor.push(f);
-          }
-        }
-        pushIfNum('steps', r.steps);
-        pushIfNum('skintemp', r.skintemp ?? r.skintemp_diff);
-        pushIfNum('hr_mean', r.hr_mean);
-        pushIfNum('acc_mean', r.acc_mean);
-        pushIfNum('humidity_mean', r.humidity_mean);
-        pushIfNum('co2_mean', r.co2_mean);
-        pushIfNum('tvoc_mean', r.tvoc_mean);
-        pushIfNum('temperature_mean', r.temperature_mean);
-
-        pushIfNum('daily_arousal', r.daily_arousal);
-        pushIfNum('daily_valence', r.daily_valence);
-        pushIfNum('daily_tiredness', r.daily_tiredness);
-        pushIfNum('daily_general_health', r.daily_general_health);
-        pushIfNum('daily_general_sleep', r.daily_general_sleep);
-      }
-
-      const avgInternal = internalVals.length ? mean(internalVals) : NaN;
-      // rmssd 평균을 정규화(normalize)하고 역수(1 - norm)를 사용해 스트레스 수준으로 변환
-      const avgRmssd = rmssdBucketVals.length ? mean(rmssdBucketVals) : NaN;
-      const avgPhysRaw = isValid(avgRmssd) ? normalize(avgRmssd, rmssdRange.min, rmssdRange.max) : NaN;
-      const avgPhysical = isValid(avgPhysRaw) ? rawToLevel(1 - avgPhysRaw) : NaN;
-
-      // summarize numeric lists to means
-      const summary: Record<string, any> = {};
-      for (const k of Object.keys(summaryAcc)) {
-        const v = (summaryAcc as any)[k];
-        if (k === 'stressor') {
-          // map stressor keys to human-readable (Korean) labels using STRESSORS / stressor_list
-          if (Array.isArray(v) && v.length) {
-            const uniqueCodes = Array.from(new Set(v)).filter(Boolean) as string[];
-            const mapped = uniqueCodes.map(code => {
-              // prefer STRESSORS mapping, then stressor_list, fallback to humanized key
-              return (STRESSORS as any)?.[code] ?? (stressor_list as any)?.[code] ?? String(code).replace(/^stressor_/, '').replace(/_/g, ' ');
-            }).filter(Boolean);
-            summary[k] = mapped.length ? mapped : undefined;
-          } else {
-            summary[k] = undefined;
-          }
-        } else if (Array.isArray(v)) {
-          summary[k] = v.length ? mean(v) : undefined;
-        } else {
-          summary[k] = v;
-        }
-      }
-
-      b.avgInternal = Number.isNaN(avgInternal) ? undefined : avgInternal;
-      b.avgPhysical = Number.isNaN(avgPhysical) ? undefined : avgPhysical;
-      b.summary = summary;
-    }
-
-    return out;
-  }, [rows, selectedDate]);
+  const buckets = React.useMemo(
+    () => buildTimelineBuckets({
+      rows,
+      baseDate: selectedDate,
+      slotsCount: SLOTS_COUNT,
+      dayStartHour: 8,
+      dayEndHour: 20,
+      dayOffsetMs: 9 * 60 * 60 * 1000,
+      mapStressorLabel: (code) =>
+        (STRESSORS as any)?.[code] ?? (stressor_list as any)?.[code] ?? String(code).replace(/^stressor_/, '').replace(/_/g, ' '),
+    }),
+    [rows, selectedDate]
+  );
 
   const call_log = rows.map(r => r.calls);
 
   return (
     <div className="w-full p-6 mb-24">
-      <Header date={selectedDate ?? new Date()} />
-      <Legend />
-      <TimelineChart pid={pid} buckets={buckets} callLog={call_log} interventions={interventions} />
+      <TimelineHeader date={selectedDate ?? new Date()} />
+      <TimelineLegend />
+      <TimelineChart buckets={buckets} callLog={call_log} interventions={interventions} />
     </div>
   );
 };

@@ -3,10 +3,7 @@ import { useRouter } from "next/router";
 import { CONTENT } from "@/data/stressType";
 import StressPage from "@/components/StatePage";
 import DeltaPage from "@/components/DeltaPage";
-/*
-  TODOs
-  1. 아이콘 추가
-*/
+
 const StressType: React.FC = () => {
   return (
     <div className="mb-8">

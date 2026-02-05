@@ -1,40 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# Dual Indicator Stress Dashboard
 
-## Getting Started
+This project is a Next.js implementation of the **dual indicator dashboard** (psychological + physiological stress) proposed in the attached paper.  
+Please add the paper citation details (title/authors/year/DOI, etc.) in the **Citation** section below.
 
-First, run the development server:
+## Overview
+- **Goal**: visualize perceived and physiological stress together to inspect daily and intraday patterns
+- **Key views**: calendar, timeline, treemap, intervention effect bar charts
 
+## Features
+- **Calendar / DiffCalendar**: daily stress summary (toggle perceived/physiological)
+- **Timeline / DiffTimeline**: time-bucketed stress, call records, intervention overlays
+- **Treemap**: correlation-based stressor visualization
+- **BarChart**: intervention effect comparison (reduction/increase)
+- **Report**: text summaries for each chart
+
+## Data & Files
+- CSVs live in `public/data`:
+  - `feature_full.csv`: base stress/context/environment/physiology
+  - `diff_full.csv`: pre/post intervention differences
+  - `diff_rate.csv`: intervention effect rates
+  - `correlation.csv`: correlation data
+- Main hooks:
+  - `src/hooks/useStressData.ts`
+  - `src/hooks/useStressDiffData.ts`
+  - `src/hooks/useEffectData.ts`
+  - `src/hooks/useCorrelationData.ts`
+
+## Project Structure (Core)
+- `src/components/`: UI components
+  - `Calendar`, `DiffCalendar`, `Timeline`, `DiffTimeline`, `Treemap`, `Barchart`
+  - `components/report/`: text report components
+- `src/utils/`: shared utilities (parsing, timeline, reports, etc.)
+- `src/constants/`: colors, chart configs, labels
+- `src/pages/`: Next.js pages
+
+## Development
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+Open `http://localhost:3000` in your browser.
+
+## Build
+```bash
+npm run build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Lint
+```bash
+npm run lint
+```
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
-
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
-
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+## Citation
+```
+Title: When Feeling and Physiology Diverge: Understanding Dual-Indicator Stress
+Sensemaking and Micro-Interventions in an Emotional-Labor Workplace
+Status: Under Review <!--Comment out when accepted-->
+<!-- Authors:
+Year:
+Venue/Journal:
+DOI/URL: -->
+```

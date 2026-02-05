@@ -5,7 +5,6 @@ import DiffCalendar from "./DiffCalendar";
 import DiffTimeline from "./DiffTimeline";
 
 const DeltaPage: React.FC<{ pid: string }> = ({ pid }) => {
-  // const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   return (

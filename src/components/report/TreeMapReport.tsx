@@ -2,6 +2,7 @@ import useCorrelationData, { TreemapCategory } from "@/hooks/useCorrelationData"
 import { NAMES, labelMap } from "@/data/stressWhy";
 import { useMemo } from "react";
 import { josa } from "es-hangul";
+import { getTopNByValue } from "@/utils/reportUtils";
 
 const weirdRelationCheck = [
   { name: 'stressor_lack_ability', type: 'stressor', negative: false },
@@ -26,17 +27,13 @@ const weirdRelationCheck = [
   { name: 'daily_general_health', type: 'daily_context', negative: true },
 ]
 
-const getTopNFromData = (data: { x: string, y: number }[], n: number) => {
-  const sortedData = data.sort((a: { x: string, y: number }, b: { x: string, y: number }) => b.y - a.y);
-  const nthScore = sortedData[n - 1]?.y || 0;
-
-  const topItems = sortedData.filter((item: { x: string, y: number }, index: number) => {
-    if (index < n) return true; // Top N은 항상 포함
-    return Math.abs(item.y / nthScore) >= 0.85 * index / n; // N등과 비슷한 점수인 항목들도 포함
-  });
-
-  return topItems.map((item: { x: string, y: number, type?: TreemapCategory }) => ({ name: item.x, type: item.type }));
-}
+const getTopNames = (
+  data: Array<{ x: string; y: number; type?: TreemapCategory }>,
+  n: number
+) => {
+  const topItems = getTopNByValue(data, n, (item) => item.y);
+  return topItems.map((item) => ({ name: item.x, type: item.type }));
+};
 
 const TreemapTemplate: React.FC<{
   type: 'psychological' | 'physiological',
@@ -88,28 +85,36 @@ const TreeMapInfo: React.FC<{ pid: string, type: 'psychological' | 'physiologica
     'context': 2,
     'daily_context': 2,
     'other': 1
-  }
+  };
 
   const top3Data = useMemo(() => {
-    if (loading) return []
-    const flatData = NAMES.map((item) => groupedByType[item][type][0].data.map((v) => ({ ...v, type: item }))).flat()
-    const top3 = getTopNFromData(flatData, 3)
+    if (loading) return [];
+    const flatData = NAMES.map((item) => (groupedByType[item]?.[type]?.[0]?.data ?? []).map((v: any) => ({ ...v, type: item }))).flat();
+    const top3 = getTopNames(flatData, 3);
     return top3.map((item) => ({ name: labelMap(item.name), type: item.type ?? 'other' }))
-  }, [groupedByType, type, loading])
+  }, [groupedByType, type, loading]);
 
   const weirdRelations = useMemo(() => {
-    if (loading) return []
-    const flatData = NAMES.map((item) => groupedByType[item][type][0].data.map((v) => ({ ...v, type: item }))).flat()
-    const maxScore = Math.max(...flatData.map(v => v.y))
-    const weirdRelations = weirdRelationCheck.filter(v => flatData.some(v2 => v2.x === v.name && v2.y / maxScore > 0.2 && ((v2.raw ?? 0) * (type === 'psychological' ? 1 : -1) > 0 === v.negative)))
-    return weirdRelations.map((item) => ({ name: labelMap(item.name), type: item.type ?? 'other', negative: item.negative }))
-  }, [groupedByType, type, loading])
+    if (loading) return [];
+    const flatData = NAMES.map((item) => (groupedByType[item]?.[type]?.[0]?.data ?? []).map((v: any) => ({ ...v, type: item }))).flat();
+    if (flatData.length === 0) return [];
+    const maxScore = Math.max(...flatData.map((v) => v.y));
+    const flagged = weirdRelationCheck.filter((v) =>
+      flatData.some((v2) =>
+        v2.x === v.name &&
+        v2.y / maxScore > 0.2 &&
+        ((v2.raw ?? 0) * (type === 'psychological' ? 1 : -1) > 0 === v.negative)
+      )
+    );
+    return flagged.map((item) => ({ name: labelMap(item.name), type: item.type ?? 'other', negative: item.negative }));
+  }, [groupedByType, type, loading]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
   const topData = NAMES.reduce((acc, item) => {
-    acc[item] = getTopNFromData(groupedByType[item][type][0].data, topNCnt[item]).map((v) => labelMap(v.name));
+    const data = (groupedByType[item]?.[type]?.[0]?.data ?? []).map((v: any) => ({ ...v, type: item }));
+    acc[item] = getTopNames(data, topNCnt[item as TreemapCategory]).map((v) => labelMap(v.name));
     return acc;
   }, {} as { [key: string]: string[] });
   // const globalTop3 = getTopNFromData(NAMES.map((item) => groupedByType[item][type][0].data.map((v) => ({ ...v, type: item }))).flat(), 3).map((item) => labelMap(item.type))
