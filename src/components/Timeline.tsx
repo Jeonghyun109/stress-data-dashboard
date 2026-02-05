@@ -1,52 +1,12 @@
 import React from 'react';
 import useStressData from '@/hooks/useStressData';
 import { stressor_list, STRESSORS } from '@/data/stressWhy';
-
-// Props reuse shared StressDataPoint type from data module
-interface TimelineProps {
-  pid: string;
-  selectedDate: Date;
-}
+import type { TimelineProps } from '@/types';
+import { GRID_CONSTANTS, STRESS_COLORS, LEGEND_DATA } from '@/constants/theme';
 
 // Constants
-const SLOTS_COUNT = 30;
-const GRID_WIDTH_PCT = 100;
-
-const STRESS_COLORS = {
-  internal: {
-    0: 'bg-violet-50',
-    1: 'bg-violet-100',
-    2: 'bg-violet-200',
-    3: 'bg-violet-300',
-    4: 'bg-violet-400',
-  },
-  physical: {
-    0: 'bg-yellow-100',
-    1: 'bg-yellow-200',
-    2: 'bg-yellow-300',
-    3: 'bg-yellow-400',
-    4: 'bg-yellow-500',
-  },
-} as const;
-
-// const ADDITIONAL_ITEMS = ['CO2', '온도', '습도', '콜 유형', '수면의 질', '각성/흥분 정도', '정서적 긍부정 정도', '피로도', '감정을 숨기려는 노력'];
-
-const LEGEND_DATA = {
-  internal: [
-    { level: 0, color: 'bg-violet-50', label: '0: Not at all' },
-    { level: 1, color: 'bg-violet-100', label: '1: A little' },
-    { level: 2, color: 'bg-violet-200', label: '2: Somewhat' },
-    { level: 3, color: 'bg-violet-300', label: '3: Quite a bit' },
-    { level: 4, color: 'bg-violet-400', label: '4: Very much' },
-  ],
-  physical: [
-    { level: 0, color: 'bg-yellow-100', label: '0: None (0-20)' },
-    { level: 1, color: 'bg-yellow-200', label: '1: Slight (20-40)' },
-    { level: 2, color: 'bg-yellow-300', label: '2: Moderate (40-60)' },
-    { level: 3, color: 'bg-yellow-400', label: '3: High (60-80)' },
-    { level: 4, color: 'bg-yellow-500', label: '4: Very high (80-100)' },
-  ],
-};
+const SLOTS_COUNT = GRID_CONSTANTS.SLOTS_COUNT;
+const GRID_WIDTH_PCT = GRID_CONSTANTS.WIDTH_PCT;
 
 // small helpers (duplicated from hook for per-bar processing)
 const mean = (arr: number[]) => arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : NaN;
@@ -392,15 +352,12 @@ const Timeline: React.FC<TimelineProps> = ({
   selectedDate,
 }) => {
   // load csv (filtered by pid)
-  console.log(selectedDate.toISOString())
-
   const dateString = new Date(selectedDate.getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
   // const fixedDate = new Date(new Date(selectedDate).setDate(selectedDate.getDate() + 1))
   const { loading, getForDate, getRowsForDate, getInterventionsForDate } = useStressData('/data/feature_full.csv', pid);
   const rows = getRowsForDate(dateString);
   const interventions = getInterventionsForDate(dateString);
-  console.log(rows)
 
   // prepare buckets
   const buckets = React.useMemo(() => {

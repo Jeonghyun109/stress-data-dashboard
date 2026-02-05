@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import Papa from "papaparse";
+import { fetchCsvRows } from "@/utils/csvUtils";
+import { filterRowsByPid, normalizePid } from "@/utils/pidUtils";
 
 type DiffRow = {
   pid: string | number;
@@ -31,32 +32,21 @@ export default function useEffectData(csvUrl = "/data/diff_rate.csv", pid?: stri
 
   useEffect(() => {
     let mounted = true;
-    const pidKey = String(pid ?? "");
+    const pidKey = normalizePid(pid);
     setLoading(true);
     setError(null);
 
     const load = async () => {
       try {
-        const resp = await fetch(csvUrl);
-        if (!resp.ok) throw new Error(`fetch failed: ${resp.status}`);
-        const text = await resp.text();
-
-        const parsed = Papa.parse<Record<string, any>>(text, {
-          header: true,
-          dynamicTyping: true,
-          skipEmptyLines: true,
-        });
-
-        const rows = (parsed.data as Record<string, any>[]).map(r => ({
-          pid: r.pid,
+        const rawRows = await fetchCsvRows<Record<string, any>>(csvUrl);
+        const rows = rawRows.map(r => ({
+          pid: normalizePid(r.pid),
           interventionName: (r.interventionName ?? r.intervention ?? "").toString(),
           perceived_diff: r.perceived_diff === "" || r.perceived_diff == null ? undefined : Number(r.perceived_diff),
           physio_diff: r.physio_diff === "" || r.physio_diff == null ? undefined : Number(r.physio_diff),
         })) as DiffRow[];
 
-        const filtered = pid !== undefined && pid !== null && pidKey !== ""
-          ? rows.filter(r => String(r.pid) === pidKey)
-          : rows;
+        const filtered = filterRowsByPid(rows, pidKey);
 
         // group by interventionName and compute mean for each metric
         const map = new Map<string, { cnt: number; perceivedSum: number; physioSum: number; perceivedCnt: number; physioCnt: number }>();
@@ -135,4 +125,3 @@ export default function useEffectData(csvUrl = "/data/diff_rate.csv", pid?: stri
     physioSeriesSorted: physioSorted.valuesSorted,
   };
 }
-

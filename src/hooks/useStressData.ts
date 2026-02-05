@@ -1,51 +1,21 @@
 import { useEffect, useState } from 'react';
-import Papa from 'papaparse';
+import type { DailyStress, UseStressDataResult, StressLevel } from '@/types';
+import { DATA_ENDPOINTS } from '@/constants/theme';
+import { 
+  toNumber, 
+  mean, 
+  getRange, 
+  normalize, 
+  rawToLevel, 
+  booleanToNumber 
+} from '@/utils/dataUtils';
+import { fetchCsvRows } from '@/utils/csvUtils';
+import { filterRowsByPid, normalizePid } from '@/utils/pidUtils';
 
-type DailyStress = {
-  psych: number;     // 0..4
-  phys: number;      // 0..4
-  psychRaw?: number; // 0..1 normalized raw
-  physRaw?: number;  // 0..1 normalized raw
-  count: number;
-};
-
-type UseStressDataResult = {
-  loading: boolean;
-  error: string | null;
-  dailyMap: Map<string, DailyStress>;
-  getForDate: (isoDate: string) => DailyStress | undefined;
-  getRowsForDate: (isoDate: string) => Array<Record<string, any>>;
-  getInterventionsForDate: (isoDate: string) => Array<{ name: string; time: string }>;
-};
-
-/* --- helpers --- */
-const toNumber = (v: unknown) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : NaN;
-};
-const mean = (arr: number[]) => arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : NaN;
-const getRange = (vals: number[]) => {
-  const clean = vals;
-  if (!clean.length) return { min: NaN, max: NaN };
-  return { min: Math.min(...clean), max: Math.max(...clean) };
-};
-const normalize = (v: number, min: number, max: number) => {
-  if (max === min) return NaN;
-  return (v - min) / (max - min);
-};
-const rawToLevel = (x: number) => {
-  return Math.max(0, Math.min(4, Math.round(x * 4)));
-};
-// helper to coerce boolean-like / True/False / 1/0 to 1 or 0
-const boolTo1 = (v: unknown) => {
-  if (v === true) return 1;
-  if (v === 'True' || v === 'true') return 1;
-  if (v === 1 || v === '1') return 1;
-  return 0;
-};
-/* --- end helpers --- */
-
-export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: string): UseStressDataResult {
+export default function useStressData(
+  csvUrl = DATA_ENDPOINTS.FEATURE_FULL, 
+  pid?: string
+): UseStressDataResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dailyMap, setDailyMap] = useState<Map<string, DailyStress>>(new Map());
@@ -53,7 +23,6 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
   const [interventionsByDate, setInterventionsByDate] = useState<Map<string, Array<{ name: string; time: string }>>>(new Map());
 
   useEffect(() => {
-    console.log('useStressData received PID ', pid);
     let mounted = true;
 
     const load = async () => {
@@ -61,25 +30,11 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
         setLoading(true);
         setError(null);
 
-        const resp = await fetch(csvUrl);
-        if (!resp.ok) throw new Error(`fetch failed: ${resp.status}`);
-        const text = await resp.text();
-
-        const parsed = Papa.parse<Record<string, string | number>>(text, {
-          header: true,
-          dynamicTyping: true,
-          skipEmptyLines: true,
-        });
-        const rows = parsed.data as Array<Record<string, any>>;
+        const rows = await fetchCsvRows<Record<string, any>>(csvUrl);
         // isValid column으로 필터랑
         const validRows = rows.filter(r => r.isValid === 'True' || r.isValid === 'TRUE' || r.isValid === true || r.isValid === 1);
         // PID로 먼저 필터링 (있을 때만)
-        const filteredRows = pid
-          ? validRows.filter(r => {
-            const rowPid = String(r.pid ?? '');
-            return rowPid === pid;
-          })
-          : validRows;
+        const filteredRows = filterRowsByPid(validRows, pid);
         // console.log(filteredRows);
 
         // Intervention Records
@@ -104,7 +59,7 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
         const rawByDate = new Map<string, Array<Record<string, any>>>(); // now will contain feature objects per row
 
         for (const r of filteredRows) {
-          const rowPid = String(r.pid ?? r.participant_id ?? r.user_id ?? '');
+          const rowPid = normalizePid(r.pid ?? r.participant_id ?? r.user_id);
           const tRaw = new Date(r.surveyTime);
           // Use local date string to avoid UTC offset issues
           // const iso = `${tRaw.getFullYear()}-${String(tRaw.getMonth() + 1).padStart(2, '0')}-${String(tRaw.getDate()).padStart(2, '0')}`; // 'YYYY-MM-DD'
@@ -120,19 +75,19 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           const tiredness = toNumber(r.tiredness ?? NaN);
           const surface_acting = toNumber(r.surface_acting ?? NaN);
 
-          const call_type_angry = boolTo1(r.call_type_angry ?? 0);
+          const call_type_angry = booleanToNumber(r.call_type_angry ?? 0);
 
           // stressor flags (columns in CSV like stressor_lack_ability ...)
-          const lack_ability = boolTo1(r.stressor_lack_ability ?? r.lack_ability ?? 0);
-          const difficult_work = boolTo1(r.stressor_difficult_work ?? r.difficult_work ?? 0);
-          const eval_pressure = boolTo1(r.stressor_eval_pressure ?? r.eval_pressure ?? 0);
-          const work_bad = boolTo1(r.stressor_work_bad ?? r.work_bad ?? 0);
-          const hard_communication = boolTo1(r.stressor_hard_communication ?? r.hard_communication ?? 0);
-          const rude_customer = boolTo1(r.stressor_rude_customer ?? r.rude_customer ?? 0);
-          const time_pressure = boolTo1(r.stressor_time_pressure ?? r.time_pressure ?? 0);
-          const noise = boolTo1(r.stressor_noise ?? r.noise ?? 0);
-          const peer_conflict = boolTo1(r.stressor_peer_conflict ?? r.peer_conflict ?? 0);
-          const stressor_other = boolTo1(r.stressor_other ?? 0);
+          const lack_ability = booleanToNumber(r.stressor_lack_ability ?? r.lack_ability ?? 0);
+          const difficult_work = booleanToNumber(r.stressor_difficult_work ?? r.difficult_work ?? 0);
+          const eval_pressure = booleanToNumber(r.stressor_eval_pressure ?? r.eval_pressure ?? 0);
+          const work_bad = booleanToNumber(r.stressor_work_bad ?? r.work_bad ?? 0);
+          const hard_communication = booleanToNumber(r.stressor_hard_communication ?? r.hard_communication ?? 0);
+          const rude_customer = booleanToNumber(r.stressor_rude_customer ?? r.rude_customer ?? 0);
+          const time_pressure = booleanToNumber(r.stressor_time_pressure ?? r.time_pressure ?? 0);
+          const noise = booleanToNumber(r.stressor_noise ?? r.noise ?? 0);
+          const peer_conflict = booleanToNumber(r.stressor_peer_conflict ?? r.peer_conflict ?? 0);
+          const stressor_other = booleanToNumber(r.stressor_other ?? 0);
 
           // daily context
           const daily_arousal = toNumber(r.daily_arousal ?? NaN);
@@ -234,15 +189,6 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           rawByDate.set(date, rows.sort((a, b) => new Date(a.isoTime).getTime() - new Date(b.isoTime).getTime()));
         }
 
-        console.log(rawByDate)
-
-        // 날짜별로 묶인 행들을 콘솔에 출력
-        // console.log('=== rows grouped by date ===');
-        // for (const [date, rowsForDate] of rawByDate.entries()) {
-        //   console.log(date, rowsForDate);
-        // }
-        // console.log('=== end grouped rows ===');
-
         // per-day aggregates
         const days = Array.from(byDay.entries()).map(([iso, arr]) => ({
           iso,
@@ -263,14 +209,11 @@ export default function useStressData(csvUrl = '/data/feature_full.csv', pid?: s
           components.push(1 - nrmssd); // inverse
           const physRaw = components.length ? components.reduce((s, v) => s + v, 0) / components.length : NaN;
 
-          const psychLevel = Math.round(psychRaw);
+          const psychLevel = Math.max(0, Math.min(4, Math.round(psychRaw)));
           const physLevel = rawToLevel(physRaw);
 
-          const psychPresent = d.psychMean;
-          const physPresent = !Number.isNaN(d.rmssdMean);
-
           out.set(d.iso, {
-            psych: psychLevel,
+            psych: psychLevel as StressLevel,
             phys: physLevel,
             psychRaw: psychRaw,
             physRaw: physRaw,

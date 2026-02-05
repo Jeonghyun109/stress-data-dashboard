@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import Papa from 'papaparse';
+import { getRange, isFiniteNumber, mean, toNumber } from '@/utils/dataUtils';
+import { fetchCsvRows } from '@/utils/csvUtils';
+import { filterRowsByPid, normalizePid } from '@/utils/pidUtils';
 
 type DailyStressDiff = {
   psych: number;     // 0..4
@@ -17,23 +19,10 @@ type UseStressDiffDataResult = {
   getRowsForDate: (isoDate: string) => Array<Record<string, any>>;
 };
 
-/* --- helpers --- */
-const toNumber = (v: unknown) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : NaN;
+const rawToDiffLevel = (value: number) => {
+  if (!isFiniteNumber(value)) return 0;
+  return Math.max(-4, Math.min(4, Math.round(value * 4)));
 };
-const isValid = (v: number) => !Number.isNaN(v);
-const mean = (arr: number[]) => arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : NaN;
-const getRange = (vals: number[]) => {
-  const clean = vals.filter(isValid);
-  if (!clean.length) return { min: NaN, max: NaN };
-  return { min: Math.min(...clean), max: Math.max(...clean) };
-};
-const rawToLevel = (x: number) => {
-  if (!isValid(x)) return 0;
-  return Math.max(-4, Math.min(4, Math.round(x * 4)));
-};
-/* --- end helpers --- */
 
 export default function useStressDiffData(csvUrl = '/data/diff_full.csv', pid?: string): UseStressDiffDataResult {
   const [loading, setLoading] = useState(true);
@@ -49,23 +38,9 @@ export default function useStressDiffData(csvUrl = '/data/diff_full.csv', pid?: 
         setLoading(true);
         setError(null);
 
-        const resp = await fetch(csvUrl);
-        if (!resp.ok) throw new Error(`fetch failed: ${resp.status}`);
-        const text = await resp.text();
-
-        const parsed = Papa.parse<Record<string, string | number>>(text, {
-          header: true,
-          dynamicTyping: true,
-          skipEmptyLines: true,
-        });
-        const rows = parsed.data as Array<Record<string, any>>;
+        const rows = await fetchCsvRows<Record<string, any>>(csvUrl);
         // PID로 먼저 필터링 (있을 때만)
-        const filteredRows = pid
-          ? rows.filter(r => {
-            const rowPid = String(r.pid ?? r.participant_id ?? r.user_id ?? '');
-            return rowPid === pid;
-          })
-          : rows;
+        const filteredRows = filterRowsByPid(rows, pid);
 
         const byDay = new Map<string, {
           psychVals: number[];
@@ -74,7 +49,7 @@ export default function useStressDiffData(csvUrl = '/data/diff_full.csv', pid?: 
         const rawByDate = new Map<string, Array<Record<string, any>>>(); // now will contain feature objects per row
 
         for (const r of filteredRows) {
-          const rowPid = String(r.pid ?? r.participant_id ?? r.user_id ?? '');
+          const rowPid = normalizePid(r.pid ?? r.participant_id ?? r.user_id);
           const tRaw = new Date(r.surveyTime);
           const iso = tRaw.toISOString().slice(0, 10); // 'YYYY-MM-DD'
 
@@ -87,8 +62,8 @@ export default function useStressDiffData(csvUrl = '/data/diff_full.csv', pid?: 
             iso,
             isoTime: tRaw.toISOString(), // 추가된 필드
             // stress
-            perceived_diff: isValid(perceived_diff) ? perceived_diff : undefined,
-            physio_diff: isValid(physio_diff) ? physio_diff : undefined,
+            perceived_diff: isFiniteNumber(perceived_diff) ? perceived_diff : undefined,
+            physio_diff: isFiniteNumber(physio_diff) ? physio_diff : undefined,
           };
 
           if (!rawByDate.has(iso)) rawByDate.set(iso, []);
@@ -102,8 +77,8 @@ export default function useStressDiffData(csvUrl = '/data/diff_full.csv', pid?: 
             byDay.set(iso, { psychVals: [], rmssdVals: [] });
           }
           const entry = byDay.get(iso)!;
-          if (isValid(psych)) entry.psychVals.push(psych);
-          if (isValid(rmssd_forAgg)) entry.rmssdVals.push(rmssd_forAgg);
+          if (isFiniteNumber(psych)) entry.psychVals.push(psych);
+          if (isFiniteNumber(rmssd_forAgg)) entry.rmssdVals.push(rmssd_forAgg);
         }
 
         // per-day aggregates
@@ -119,22 +94,22 @@ export default function useStressDiffData(csvUrl = '/data/diff_full.csv', pid?: 
 
         const out = new Map<string, DailyStressDiff>();
         for (const d of days) {
-          const psychRaw = isValid(d.psychMean) ? d.psychMean : NaN;
+          const psychRaw = isFiniteNumber(d.psychMean) ? d.psychMean : NaN;
 
           const components: number[] = [];
           const rmssd_abs_max = Math.max(Math.abs(rmssdRange.min), Math.abs(rmssdRange.max));
-          const nrmssd = isValid(d.rmssdMean) ? d.rmssdMean / rmssd_abs_max : NaN;
-          if (isValid(nrmssd)) components.push(nrmssd);
+          const nrmssd = isFiniteNumber(d.rmssdMean) ? d.rmssdMean / rmssd_abs_max : NaN;
+          if (isFiniteNumber(nrmssd)) components.push(nrmssd);
           const physRaw = components.length ? components.reduce((s, v) => s + v, 0) / components.length : NaN;
 
-          const psychLevel = isValid(psychRaw) ? Math.round(psychRaw) : 0;
-          const physLevel = isValid(physRaw) ? rawToLevel(physRaw) : 0;
+          const psychLevel = isFiniteNumber(psychRaw) ? Math.round(psychRaw) : 0;
+          const physLevel = isFiniteNumber(physRaw) ? rawToDiffLevel(physRaw) : 0;
 
           out.set(d.iso, {
             psych: psychLevel,
             phys: physLevel,
-            psychRaw: isValid(psychRaw) ? psychRaw : undefined,
-            physRaw: isValid(physRaw) ? physRaw : undefined,
+            psychRaw: isFiniteNumber(psychRaw) ? psychRaw : undefined,
+            physRaw: isFiniteNumber(physRaw) ? physRaw : undefined,
             count: d.count,
           });
         }

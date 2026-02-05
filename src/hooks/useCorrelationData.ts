@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import Papa from "papaparse";
+import { fetchCsvRows } from "@/utils/csvUtils";
+import { filterRowsByPid, normalizePid } from "@/utils/pidUtils";
 // import { stressor_list as STRESSOR_MAP, env_list as ENV_MAP, context_list as CONTEXT_MAP } from "@/data/stressWhy";
 
 export type CorRow = {
@@ -66,25 +67,21 @@ export default function useCorrelationData(csvUrl = "/data/correlation.csv", pid
 
     const load = async () => {
       try {
-        const resp = await fetch(csvUrl);
-        if (!resp.ok) throw new Error(`Failed to fetch CSV: ${resp.status}`);
-        const text = await resp.text();
+        const rawRows = await fetchCsvRows<Record<string, any>>(
+          csvUrl,
+          undefined,
+          { errorPrefix: "Failed to fetch CSV" }
+        );
 
-        const parsed = Papa.parse<Record<string, any>>(text, {
-          header: true,
-          dynamicTyping: true,
-          skipEmptyLines: true,
-        });
-
-        const parsedRows: CorRow[] = (parsed.data as Record<string, any>[]).map((r) => ({
-          pid: String(r.pid ?? ""),
+        const parsedRows: CorRow[] = rawRows.map((r) => ({
+          pid: normalizePid(r.pid),
           feature: String(r.feature ?? ""),
           category: r.feature.startsWith("daily_") ? "daily_context" : (String(r.category ?? "").trim() || "uncategorized"),
           stress: typeof r.stress === "number" ? r.stress : (r.stress === "" || r.stress == null ? undefined : Number(r.stress)),
           rmssd: typeof r.rmssd === "number" ? r.rmssd : (r.rmssd === "" || r.rmssd == null ? undefined : Number(r.rmssd)),
         }));
 
-        const filtered = pid ? parsedRows.filter((r) => String(r.pid) === String(pid)) : parsedRows;
+        const filtered = filterRowsByPid(parsedRows, pid);
         // group by category (legacy behavior)
         const psychGroups = new Map<string, TreemapDatum[]>();
         const physGroups = new Map<string, TreemapDatum[]>();
@@ -181,11 +178,11 @@ export default function useCorrelationData(csvUrl = "/data/correlation.csv", pid
     };
   }, [csvUrl, pid]);
 
-  const getRowsForPid = (qpid?: string) => (qpid ? rows.filter((r) => String(r.pid) === String(qpid)) : rows);
+  const getRowsForPid = (qpid?: string) => filterRowsByPid(rows, qpid);
   const getSeriesForPid = (qpid?: string) => {
     if (!qpid) return { psychological: psychSeries, physiological: physSeries };
     // compute on the fly for the requested pid
-    const pidRows = rows.filter((r) => String(r.pid) === String(qpid));
+    const pidRows = filterRowsByPid(rows, qpid);
     const g1 = new Map<string, TreemapDatum[]>();
     const g2 = new Map<string, TreemapDatum[]>();
     for (const r of pidRows) {
@@ -206,8 +203,6 @@ export default function useCorrelationData(csvUrl = "/data/correlation.csv", pid
       physiological: Array.from(g2.entries()).map(([name, data]) => ({ name, data })),
     };
   };
-
-  console.log(groupedByType)
 
   return {
     loading,

@@ -6,7 +6,6 @@ import Timeline from "./Timeline";
 
 const StressPage: React.FC<{ pid: string }> = ({ pid }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  console.log(selectedDate)
 
   return (
     <>

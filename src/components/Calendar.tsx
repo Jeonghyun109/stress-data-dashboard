@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import useStressData from '@/hooks/useStressData';
-import Image from 'next/image';
+import CalendarHeader from './calendar/CalendarHeader';
+import MonthNavigation from './calendar/MonthNavigation';
+import WeekLabels from './calendar/WeekLabels';
 
 interface CalendarProps {
   pid: string | undefined;
@@ -10,145 +12,99 @@ interface CalendarProps {
 
 type Stress = "Psychological" | "Physiological";
 
+const MIN_MONTH = 6; // July
+const MAX_MONTH = 7; // August
+const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const OUTSIDE_MONTH_STYLE = { backgroundColor: '#F3F4F6' };
+const NEUTRAL_STYLE = { backgroundColor: '#ffffff' };
 
-const ToggleSwitch: React.FC<{ active: boolean; onToggle: () => void; color?: string; label: string }> = ({ active, onToggle, color = '#2563EB', label }) => {
-  const bgActive = color;
-  const bgInactive = '#E5E7EB';
-  return (
-    <button
-      onClick={onToggle}
-      aria-pressed={active}
-      className="flex items-center gap-3 cursor-pointer focus:outline-none"
-    >
-      <span
-        className={`w-9 h-5 rounded-full relative transition-colors duration-150`}
-        style={{ backgroundColor: active ? bgActive : bgInactive }}
-      >
-        <span
-          className={`block w-3 h-3 bg-white rounded-full absolute top-1 transition-transform duration-150`}
-          style={{ transform: active ? 'translateX(20px)' : 'translateX(3px)' }}
-        />
-      </span>
-      <span className={`text-sm ${active ? 'text-gray-800' : 'text-gray-500'}`}>{label}</span>
-    </button>
-  );
+// Timeline과 동일한 클래스 매핑 (0..4)
+const STRESS_CLASSES = {
+  Psychological: ['bg-violet-50', 'bg-violet-100', 'bg-violet-200', 'bg-violet-300', 'bg-violet-400'],
+  Physiological: ['bg-yellow-100', 'bg-yellow-200', 'bg-yellow-300', 'bg-yellow-400', 'bg-yellow-500'],
+} as const;
+
+// 동일 매핑의 대략적인 HEX 값(그라디언트 생성용)
+const STRESS_HEX = {
+  Psychological: ['#f5f3ff', '#ede9fe', '#ddd6ff', '#c4b4ff', '#a684ff'],
+  Physiological: ['#fef9c2', '#fff085', '#ffdf20', '#fcc800', '#efb100'],
+} as const;
+
+const clampLevel = (lvl: number) => (lvl < 0 ? -1 : Math.min(4, lvl));
+
+const levelToClass = (type: Stress, lvl: number) => {
+  if (lvl < 0) return 'bg-white';
+  return STRESS_CLASSES[type][clampLevel(lvl)] ?? 'bg-white';
 };
 
-const Header: React.FC<{
-  showPsych: boolean;
-  setShowPsych: (v: boolean) => void;
-  showPhys: boolean;
-  setShowPhys: (v: boolean) => void;
-}> = ({ showPsych, setShowPsych, showPhys, setShowPhys }) => (
-  <div className="mb-6 flex flex-col justify-between">
-    <h2 className="text-2xl font-bold text-gray-800">Daily stress trend calendar</h2>
-    <div className="w-full flex flex-col items-end gap-2 mt-6">
-      <div className="mr-[19px]"><ToggleSwitch active={showPsych} onToggle={() => setShowPsych(!showPsych)} color="#A78BFA" label="Perceived stress score"/></div>
-      <ToggleSwitch active={showPhys} onToggle={() => setShowPhys(!showPhys)} color="#F59E0B" label="Physiological stress score" />
-    </div>
-  </div>
-);
+const levelToHex = (type: Stress, lvl: number) => {
+  if (lvl < 0) return '#ffffff';
+  return STRESS_HEX[type][clampLevel(lvl)] ?? '#ffffff';
+};
 
-/*
-  TODOs
-  1. 설명문
-  2. 드래그 해서 여러 날짜 선택
-*/
+const buildCalendarDates = (year: number, month: number) => {
+  const firstDay = new Date(year, month, 1).getDay();
+  const start = new Date(year, month, 1 - firstDay);
+  const slots: Array<Date> = [];
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    slots.push(d);
+  }
+  return slots;
+};
+
+const splitWeeks = (slots: Date[]) => {
+  const weeks: Date[][] = [];
+  for (let i = 0; i < slots.length; i += 7) {
+    weeks.push(slots.slice(i, i + 7));
+  }
+  return weeks;
+};
+
+const getDateKey = (date: Date) => {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
+
 const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate }) => {
-  const today = new Date();
-
   const [year, setYear] = useState<number>(selectedDate?.getFullYear() ?? 2025);
   const [month, setMonth] = useState<number>(selectedDate?.getMonth() ?? 7);
-  // const [year, setYear] = useState<number>(selectedDate?.getFullYear() ?? today.getFullYear());
-  // const [month, setMonth] = useState<number>(selectedDate?.getMonth() ?? today.getMonth());
-  const [firstDay, setFirstDay] = useState<number>(new Date(year, month, 1).getDay());
-  const [dates, setDates] = useState<Array<Date>>([]);
 
   const [showPsych, setShowPsych] = useState<boolean>(true);
   const [showPhys, setShowPhys] = useState<boolean>(false);
 
-  const { loading, dailyMap, getForDate } = useStressData('/data/feature_full.csv', pid);
-
-  useEffect(() => {
-    const first = new Date(year, month, 1).getDay();
-    setFirstDay(first);
-
-    // Generate dates array with nulls for empty slots
-    const start = new Date(year, month, 1 - first);
-    const slots: Array<Date> = [];
-    for (let i = 0; i < 42; i++) {
-      const d = new Date(start);
-      d.setDate(d.getDate() + i);
-      slots.push(d);
-    }
-    setDates(slots);
-  }, [month, year]);
-
+  const { getForDate } = useStressData('/data/feature_full.csv', pid);
+  const dates = useMemo(() => buildCalendarDates(year, month), [year, month]);
+  const weeks = useMemo(() => splitWeeks(dates), [dates]);
 
   // Example: restrict navigation to current year only
-  const minMonth = 6; // July
-  const maxMonth = 7; // August
-  const isPrevDisabled = month <= minMonth;
-  const isNextDisabled = month >= maxMonth;
-
-  const splitWeeks: (slots: Date[]) => Date[][] = (slots) => {
-    const weeks: Date[][] = [];
-    for (let i = 0; i < slots.length; i += 7) {
-      weeks.push(slots.slice(i, i + 7));
-    }
-    return weeks;
-  };
-
-  // Timeline과 동일한 클래스 매핑 (0..4)
-  const STRESS_CLASSES = {
-    'Psychological': ['bg-violet-50', 'bg-violet-100', 'bg-violet-200', 'bg-violet-300', 'bg-violet-400'],
-    'Physiological': ['bg-yellow-100', 'bg-yellow-200', 'bg-yellow-300', 'bg-yellow-400', 'bg-yellow-500'],
-  } as const;
-
-  // 동일 매핑의 대략적인 HEX 값(그라디언트 생성용)
-  const STRESS_HEX = {
-    'Psychological': ['#f5f3ff', '#ede9fe', '#ddd6ff', '#c4b4ff', '#a684ff'],
-    'Physiological': ['#fef9c2', '#fff085', '#ffdf20', '#fcc800', '#efb100'],
-  } as const;
-
-  // 기존 levelToHex 제거/대체 — 클래스 또는 hex 반환용 헬퍼
-  const levelToClass = (type: Stress, lvl: number) => {
-    if (lvl < 0) return 'bg-white';
-    return STRESS_CLASSES[type][lvl] ?? 'bg-white';
-  };
-  const levelToHex = (type: Stress, lvl: number) => {
-    if (lvl < 0) return '#ffffff';
-    return STRESS_HEX[type][lvl] ?? '#ffffff';
-  };
+  const isPrevDisabled = month <= MIN_MONTH;
+  const isNextDisabled = month >= MAX_MONTH;
 
   const getDateStyle = (date: Date) => {
-    if (date.getMonth() !== month) return { className: 'text-gray-400', style: { backgroundColor: '#F3F4F6' } };
+    if (date.getMonth() !== month) return { className: 'text-gray-400', style: OUTSIDE_MONTH_STYLE };
     // Use local date string for key to match useStressData
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const key = getDateKey(date);
     const data = getForDate(key) ?? { psych: -1, phys: -1 };
     const psych = data.psych;
     const phys = data.phys;
 
     // when both toggles off -> neutral
-    if (!showPsych && !showPhys) return { className: '', style: { backgroundColor: '#ffffff' } };
+    if (!showPsych && !showPhys) return { className: '', style: NEUTRAL_STYLE };
 
     // only psych -> apply Tailwind bg class
     if (showPsych && !showPhys) {
-      const cls = levelToClass('Psychological' as Stress, psych);
-
-      return { className: cls, style: {} };
+      return { className: levelToClass('Psychological', psych), style: {} };
     }
 
     // only phys -> apply Tailwind bg class
     if (!showPsych && showPhys) {
-      const cls = levelToClass('Physiological' as Stress, phys);
-
-      return { className: cls, style: {} };
+      return { className: levelToClass('Physiological', phys), style: {} };
     }
 
     // both shown -> split gradient (left phys, right psych) using HEX equivalents
-    const physHex = levelToHex('Physiological' as Stress, phys);
-    const psychHex = levelToHex('Psychological' as Stress, psych);
+    const physHex = levelToHex('Physiological', phys);
+    const psychHex = levelToHex('Psychological', psych);
     return {
       className: '',
       style: {
@@ -158,64 +114,31 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
     };
   };
 
-  const MonthNavigation = () => {
-    return (
-      <div className="flex justify-between items-center mb-3 px-16">
-        <button
-          className={`bg-transparent border-none text-[20px] flex items-center justify-center ${isPrevDisabled ? 'opacity-40' : 'cursor-pointer'}`}
-          aria-label="Previous Month"
-          disabled={isPrevDisabled}
-          onClick={() => setMonth(month - 1)}
-        >
-          <Image src="/icons/chevron-left.svg" alt="Previous Month" width={24} height={24} />
-        </button>
-        <span className="font-semibold text-[20px]">{year}.{month + 1}</span>
-        <button
-          className={`bg-transparent border-none text-[20px] flex items-center justify-center ${isNextDisabled ? 'opacity-40' : 'cursor-pointer'}`}
-          aria-label="Next Month"
-          disabled={isNextDisabled}
-          onClick={() => setMonth(month + 1)}
-        >
-          <Image src="/icons/chevron-right.svg" alt="Next Month" width={24} height={24} />
-        </button>
-      </div>
-    );
-  }
-
-  const WeekLabels = () => (
-    // <div className="grid [grid-template-columns:repeat(7,minmax(0,1fr))_1.6fr] gap-0.5 mt-6"></div>
-    <div className="grid grid-cols-7 gap-0.5 mt-3">
-      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
-        <div
-          key={day + i}
-          className="font-medium text-[#888] text-center text-[15px] mb-1"
-        >
-          {day}
-        </div>
-      ))}
-      {/* <div className="w-[400px] font-medium text-[#888] text-center text-[15px] mb-1">주간 요약</div> */}
-    </div>
-  );
-
   return (
-    // <div className="w-[658px] mx-auto font-sans p-6">
     <div className="w-[338px] mx-auto font-sans py-6 pl-0 pr-6">
-      <Header showPsych={showPsych} setShowPsych={setShowPsych} showPhys={showPhys} setShowPhys={setShowPhys} />
-      <MonthNavigation />
-      <WeekLabels />
+      <CalendarHeader showPsych={showPsych} setShowPsych={setShowPsych} showPhys={showPhys} setShowPhys={setShowPhys} />
+      <MonthNavigation
+        year={year}
+        month={month}
+        isPrevDisabled={isPrevDisabled}
+        isNextDisabled={isNextDisabled}
+        onPrev={() => setMonth(month - 1)}
+        onNext={() => setMonth(month + 1)}
+      />
+      <WeekLabels labels={WEEK_DAYS} />
       <div className="grid grid-cols-7 gap-0.25 rounded-xl p-[1px] mt-1 bg-gray-200 text-sm">
-        {/* <div className="grid [grid-template-columns:repeat(7,minmax(0,1fr))_1.6fr] gap-0.25 rounded-xl p-[1px] mt-1 bg-gray-200 text-sm"> */}
-        {splitWeeks(dates).map((week, w_idx) => (
+        {weeks.map((week, w_idx) => (
           <React.Fragment key={`week-${w_idx}`}>
             {week.map((date, idx) => {
               const base = 'w-[44px] h-[40px] first:rounded-tl-xl nth-7:rounded-tr-xl nth-36:rounded-bl-xl last:rounded-br-xl text-center leading-[40px] mx-auto hover:font-bold';
               const ds = getDateStyle(date);
+              const isOutOfRange = date.getMonth() < MIN_MONTH || date.getMonth() > MAX_MONTH;
               return (
                 <button
                   key={idx}
-                  className={`${base} padding-2 ${getDateStyle(date).className} ${date === selectedDate ? 'font-bold' : 'font-medium'}`}
+                  className={`${base} padding-2 ${ds.className} ${date === selectedDate ? 'font-bold' : 'font-medium'}`}
                   onClick={() => {
-                    if (date.getMonth() < minMonth || date.getMonth() > maxMonth) return;
+                    if (isOutOfRange) return;
                     if (date.getMonth() !== month) {
                       setMonth(date.getMonth());
                     }
@@ -227,13 +150,6 @@ const Calendar: React.FC<CalendarProps> = ({ pid, selectedDate, setSelectedDate 
                 </button>
               );
             })}
-            {/* <div className={`h-[44px] w-[360px] ${w_idx === 0 ? 'rounded-tr-xl' : w_idx === splitWeeks(dates).length - 1 ? 'rounded-br-xl' : ''} bg-white px-2 py-1`}>
-            {summary.avg === null ? (
-            <span className="text-gray-500">데이터 없음</span>
-            ) : (
-            <div className="text-gray-700">이번주는 평균 {summary.avg} / 최저 {summary.min} / 최고 {summary.max}의 스트레스를 받으셨네요! 평소보다 스트레스를 많이 받으셨던 것으로 보입니다.</div>
-            )}
-          </div> */}
           </React.Fragment>
         ))}
       </div>

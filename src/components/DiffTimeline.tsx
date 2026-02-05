@@ -134,9 +134,6 @@ const TimelineChart: React.FC<{
   const [tooltip, setTooltip] = React.useState<null | { leftPercent: number; bucketIdx: number }>(null);
   const [flag, setFlag] = React.useState<null | { leftPercent: number; bucketIdx: number }>(null);
 
-  console.log(psychDiff)
-  console.log(physDiff)
-
   const openTooltip = (idx: number) => {
     const leftPercent = (idx + 0.5) * colPct;
     setTooltip({ leftPercent, bucketIdx: idx });
@@ -450,8 +447,6 @@ const DiffTimeline: React.FC<TimelineProps> = ({
   const diff_rows = getDiffRowsForDate(fixedDate.toISOString().slice(0, 10));
   const psych_diff = diff_rows.map((row) => row.perceived_diff);
   const phys_diff = diff_rows.map((row) => row.physio_diff);
-
-  console.log('diff_rows', diff_rows)
 
   // prepare buckets
   const buckets = React.useMemo(() => {
