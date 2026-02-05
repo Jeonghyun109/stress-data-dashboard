@@ -1,6 +1,6 @@
 # Dual Indicator Stress Dashboard
 
-This project is a Next.js implementation of the **dual indicator dashboard** (psychological + physiological stress) proposed in the attached paper.  
+This project is a Next.js implementation of the **dual indicator dashboard** (perceived + physiological stress) proposed in the attached paper.  
 Please add the paper citation details (title/authors/year/DOI, etc.) in the **Citation** section below.
 
 ## Overview
@@ -55,9 +55,5 @@ npm run lint
 ```
 Title: When Feeling and Physiology Diverge: Understanding Dual-Indicator Stress
 Sensemaking and Micro-Interventions in an Emotional-Labor Workplace
-Status: Under Review <!--Comment out when accepted-->
-<!-- Authors:
-Year:
-Venue/Journal:
-DOI/URL: -->
+Status: Under Review
 ```
