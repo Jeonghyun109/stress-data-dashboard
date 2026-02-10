@@ -1,7 +1,7 @@
 # Dual Indicator Stress Dashboard
 
 This project is a Next.js implementation of the **dual indicator dashboard** (perceived + physiological stress) proposed in the attached paper.  
-You can explore the dashboard demo by open `http://localhost:3000/dashboard{pid}` in your browser.
+You can explore the dashboard demo by open `http://localhost:3000/dashboard/{pid}` in your browser.
 
 ## Overview
 - **Goal**: visualize perceived and physiological stress together to inspect daily and intraday patterns
